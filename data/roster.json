@@ -1,6 +1,6 @@
 {
-  "project": "Bayfront Medical Office — Phase 2",
-  "generalContractor": "Gulf Coast Construction Group",
+  "project": "",
+  "generalContractor": "",
   "county": "MIAMI-DADE",
   "subcontractors": [
     {
@@ -88,6 +88,6 @@
   "schedule": {
     "cadence": "weekly",
     "lastRun": null,
-    "nextDue": "2026-09-18T15:14:08.684Z"
+    "nextDue": "2026-09-18T15:24:04.727Z"
   }
 }

@@ -261,6 +261,80 @@
     background: rgba(26,31,46,.025); border: 1px solid var(--line);
     border-radius: 12px; padding: 15px 17px; margin-top: 10px;
   }
+  /* what changed */
+  .changes { margin-top: 16px; }
+  .chg { display: flex; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+  .chg:last-child { border-bottom: 0; }
+  .chg .mk {
+    width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+    flex: none; background: rgba(26,31,46,.05); color: var(--body);
+  }
+  .chg .mk .i { width: 14px; height: 14px; }
+  .chg.worse .mk { background: rgba(217,72,79,.1); color: var(--critical); }
+  .chg.better .mk { background: rgba(47,138,91,.1); color: var(--ok); }
+  .chg b { font-size: 13.5px; font-weight: 600; }
+  .chg p { margin: 2px 0 0; font-size: 12.6px; color: var(--body); }
+  .chg .open {
+    margin-left: auto; border: 1px solid var(--line); background: #fff; border-radius: 8px;
+    padding: 5px 11px; font: 550 11.5px var(--sans); color: var(--body); cursor: pointer; flex: none;
+  }
+  .chg .open:hover { border-color: var(--violet); color: var(--violet); }
+  .quiet {
+    display: flex; gap: 12px; align-items: flex-start; padding: 18px 19px;
+    background: rgba(47,138,91,.06); border-radius: 13px; color: #226b47; font-size: 13.5px;
+  }
+  .quiet .i { width: 18px; height: 18px; margin-top: 1px; flex: none; }
+  .quiet b { display: block; margin-bottom: 3px; }
+
+  /* subcontractor drawer */
+  .scrim {
+    position: fixed; inset: 0; background: rgba(20,23,34,.34); backdrop-filter: blur(2px);
+    opacity: 0; pointer-events: none; transition: .18s; z-index: 40;
+  }
+  .scrim.on { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100%);
+    background: #fbfbfd; border-left: 1px solid var(--line); z-index: 50;
+    transform: translateX(100%); transition: transform .22s cubic-bezier(.3,.8,.4,1);
+    display: flex; flex-direction: column;
+  }
+  .drawer.on { transform: none; }
+  .drawer header {
+    padding: 20px 22px 16px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .drawer header h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+  .drawer header .lic { font: 11.5px var(--mono); color: var(--mute); margin-top: 3px; }
+  .drawer .shut {
+    margin-left: auto; border: 1px solid var(--line); background: #fff; border-radius: 9px;
+    padding: 6px; cursor: pointer; color: var(--body);
+  }
+  .drawer .bd { padding: 20px 22px 40px; overflow-y: auto; }
+
+  .tl { margin-top: 4px; }
+  .tl .pt { display: grid; grid-template-columns: 13px 1fr; gap: 14px; }
+  .tl .spine { display: flex; flex-direction: column; align-items: center; }
+  .tl .node {
+    width: 11px; height: 11px; border-radius: 999px; background: #fff;
+    border: 2.5px solid var(--mute); margin-top: 4px; flex: none;
+  }
+  .tl .pt.bad .node { border-color: var(--critical); }
+  .tl .pt.good .node { border-color: var(--ok); }
+  .tl .line { flex: 1; width: 2px; background: var(--line); margin: 4px 0; min-height: 18px; }
+  .tl .pt:last-child .line { display: none; }
+  .tl .body { padding-bottom: 20px; }
+  .tl time { font: 11px var(--mono); color: var(--mute); }
+  .tl b { display: block; font-size: 13.5px; margin-top: 3px; }
+  .tl p { margin: 3px 0 0; font-size: 12.6px; color: var(--body); }
+
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 22px; }
+  .fact { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .fact span { font: 10.5px var(--mono); letter-spacing: .09em; color: var(--mute); text-transform: uppercase; }
+  .fact b { display: block; font-size: 14px; margin-top: 5px; letter-spacing: -.01em; }
+
+  .rowlink { cursor: pointer; }
+  .rowlink:hover { background: rgba(108,92,231,.035); }
+
   /* setup */
   .stepbar {
     display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
@@ -359,6 +433,14 @@
 
     <!-- ── dashboard ── -->
     <div class="view on" id="v-dash">
+      <div class="panel changes">
+        <h3>What changed</h3>
+        <p class="caption" id="changesCaption">Since the previous check</p>
+        <div id="changesBody">
+          <div class="empty"><b>Nothing to compare yet</b>Run a sweep twice and Proto will tell you only what moved between them.</div>
+        </div>
+      </div>
+
       <div class="kpis">
         <div class="kpi">
           <div class="hd"><span class="ic"><svg class="i"><use href="#i-users"/></svg></span>Subcontractors</div>
@@ -537,6 +619,23 @@
   </main>
 </div>
 
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <header>
+    <div>
+      <h2 id="dwName">—</h2>
+      <div class="lic" id="dwLic"></div>
+    </div>
+    <button class="shut" id="dwShut"><svg class="i"><use href="#i-x"/></svg></button>
+  </header>
+  <div class="bd">
+    <div class="facts" id="dwFacts"></div>
+    <h3 style="margin:0 0 4px;font-size:13px">Status history</h3>
+    <p class="caption" style="margin:0 0 14px">Only the readings where something moved.</p>
+    <div class="tl" id="dwTl"></div>
+  </div>
+</aside>
+
 <script>
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -597,7 +696,7 @@ async function loadRoster() {
   $("#rosterBody").innerHTML = n
     ? roster.subcontractors
         .map((s) =>
-          "<tr><td>" + esc(s.name) + "</td><td class='lic'>" + esc(s.licenseNumber) + "</td><td>" +
+          "<tr class='rowlink' data-sub='" + s.licenseNumber + "'><td>" + esc(s.name) + "</td><td class='lic'>" + esc(s.licenseNumber) + "</td><td>" +
           (s.trade ? "<span class='chip'>" + esc(s.trade) + "</span>" : "<span class='chip none'>unset</span>") +
           "</td><td style='text-align:right'><button class='x' data-rm='" + esc(s.licenseNumber) + "'><svg class='i'><use href='#i-x'/></svg></button></td></tr>"
         )
@@ -777,7 +876,7 @@ function paint(list) {
   $("#kWhenBar").style.width = "100%";
 
   const card = (f) =>
-    "<div class='find " + f.exposure.level + "'><h4><span>" + esc(f.name) + "</span><span class='lvl'>" + f.exposure.level + "</span></h4>" +
+    "<div class='find rowlink " + f.exposure.level + "' data-sub='" + f.licenseNumber + "'><h4><span>" + esc(f.name) + "</span><span class='lvl'>" + f.exposure.level + "</span></h4>" +
     "<div class='lic'>" + esc(f.licenseNumber) + " · " + esc(f.license ? f.license.licenseType : "unverified") + "</div>" +
     "<ul>" + f.exposure.reasons.map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" +
     (f.exposure.level === "NONE" ? "" : "<div class='act'>" + esc(f.exposure.action) + "</div>") + "</div>";
@@ -787,6 +886,111 @@ function paint(list) {
     ? bad.slice(0, 3).map(card).join("")
     : "<div class='empty'><b>Everything is clear</b>All " + list.length + " licences are in good standing.</div>";
 }
+
+/* ── what changed ───────────────────────────────────── */
+const icon = (id) => "<svg class='i'><use href='#i-" + id + "'/></svg>";
+const when = (iso) => new Date(iso).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const pretty = (s) => String(s || "").replace(/_/g, " ").toLowerCase();
+
+async function loadChanges() {
+  const c = await (await fetch("/api/changes")).json();
+  const body = $("#changesBody");
+  const cap = $("#changesCaption");
+
+  if (!c.ready) {
+    cap.textContent = c.reason === "first-run" ? "First check recorded" : "Since the previous check";
+    body.innerHTML =
+      c.reason === "first-run"
+        ? "<div class='quiet'>" + icon("check") + "<span><b>Baseline recorded.</b>" +
+          c.total + " subcontractors read on " + when(c.at) + ". From the next check onward Proto reports only what moved.</span></div>"
+        : "<div class='empty'><b>Nothing to compare yet</b>Run a sweep twice and Proto will tell you only what moved between them.</div>";
+    return;
+  }
+
+  cap.textContent = "Since " + when(c.since);
+
+  if (c.quiet) {
+    body.innerHTML =
+      "<div class='quiet'>" + icon("check") +
+      "<span><b>Nothing changed.</b>All " + c.total + " subcontractors read the same as they did on " +
+      when(c.since) + ". That is the check doing its job on a quiet week.</span></div>";
+    return;
+  }
+
+  const row = (cls, ic, name, licence, line) =>
+    "<div class='chg " + cls + "'><span class='mk'>" + icon(ic) + "</span>" +
+    "<div><b>" + esc(name) + "</b><p>" + line + "</p></div>" +
+    "<button class='open' data-sub='" + esc(licence) + "'>History</button></div>";
+
+  const out = [
+    ...c.appeared.map((x) => row("worse", "alert", x.name, x.licence,
+      "Became a finding — was " + esc(pretty(x.was)) + ", now <b>" + esc(pretty(x.status)) + "</b>. " + esc(x.level) + " exposure.")),
+    ...c.statusChanged.map((x) => row("worse", "rotate", x.name, x.licence,
+      "Status moved from " + esc(pretty(x.was)) + " to <b>" + esc(pretty(x.status)) + "</b>.")),
+    ...c.resolved.map((x) => row("better", "check", x.name, x.licence,
+      "No longer a finding — was " + esc(pretty(x.was)) + ", now <b>" + esc(pretty(x.status)) + "</b>.")),
+    ...c.added.map((x) => row("", "users", x.name, x.licence, "Added to the roster since the last check.")),
+    ...c.removed.map((x) => row("", "x", x.name, x.licence, "Removed from the roster since the last check.")),
+  ].join("");
+
+  body.innerHTML = out + "<p class='hint' style='margin-top:12px'>" + c.unchanged + " unchanged.</p>";
+}
+
+/* ── subcontractor history ──────────────────────────── */
+async function openSub(licence) {
+  $("#scrim").classList.add("on");
+  $("#drawer").classList.add("on");
+  $("#drawer").setAttribute("aria-hidden", "false");
+  $("#dwTl").innerHTML = "<p class='hint'>Reading the record…</p>";
+  $("#dwFacts").innerHTML = "";
+
+  const t = await (await fetch("/api/timeline?licence=" + encodeURIComponent(licence))).json();
+  $("#dwName").textContent = t.name || licence;
+  $("#dwLic").textContent = licence + (t.licenseType ? " · " + t.licenseType : "");
+
+  const cur = t.current;
+  $("#dwFacts").innerHTML = [
+    ["Status now", cur ? esc(cur.statusRaw) : "—"],
+    ["Expires", cur && cur.expirationDate ? esc(cur.expirationDate) : "—"],
+    ["Readings kept", t.readings],
+    ["Permits on record", cur ? cur.permits : "—"],
+  ].map((f) => "<div class='fact'><span>" + f[0] + "</span><b>" + f[1] + "</b></div>").join("");
+
+  $("#dwTl").innerHTML = t.points.length
+    ? t.points
+        .slice()
+        .reverse()
+        .map((p) => {
+          const bad = p.level !== "NONE";
+          return (
+            "<div class='pt " + (bad ? "bad" : "good") + "'>" +
+            "<div class='spine'><span class='node'></span><span class='line'></span></div>" +
+            "<div class='body'><time>" + when(p.at) + "</time>" +
+            "<b>" + esc(p.statusRaw) + (p.first ? " — first reading" : "") + "</b>" +
+            "<p>" + (bad ? esc(p.level) + " exposure" : "In good standing") +
+            (p.expirationDate ? " · expires " + esc(p.expirationDate) : "") +
+            (p.lastPermit ? " · last permit " + esc(p.lastPermit) : "") + "</p></div></div>"
+          );
+        })
+        .join("")
+    : "<div class='empty'><b>No readings yet</b>This subcontractor has not been through a completed sweep.</div>";
+}
+
+/* One delegated handler: findings, change rows and roster rows all open the same record. */
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-rm]")) return; // the remove control is not a link into the record
+  const el = e.target.closest("[data-sub]");
+  if (el) openSub(el.dataset.sub);
+});
+
+const shutDrawer = () => {
+  $("#scrim").classList.remove("on");
+  $("#drawer").classList.remove("on");
+  $("#drawer").setAttribute("aria-hidden", "true");
+};
+$("#scrim").addEventListener("click", shutDrawer);
+$("#dwShut").addEventListener("click", shutDrawer);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") shutDrawer(); });
 
 function sweep(fresh) {
   running(true);
@@ -836,6 +1040,7 @@ function sweep(fresh) {
       $("#agentSub").textContent = ev.total + " subcontractors verified against the registry of record.";
       $("#track").style.width = "100%";
       paint(ev.findings);
+      loadChanges();
       running(false);
       source.close();
     }
@@ -882,6 +1087,7 @@ const hour = new Date().getHours();
 $("#greeting").textContent = (hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening") + ".";
 running(false);
 loadRoster().then(renderCadences);
+loadChanges();
 </script>
 </body>
 </html>

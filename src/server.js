@@ -10,6 +10,7 @@
 import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { runSweep } from './sweeper.js'
+import { recordRun, changes, timelineFor } from './history.js'
 import {
   loadRoster,
   saveRoster,
@@ -90,6 +91,7 @@ function startWatch() {
     try {
       for await (const event of runSweep(roster, { signal: controller.signal })) {
         if (event.type === 'complete') {
+          await recordRun(roster.project, event.findings)
           await markChecked()
           console.log(`  scheduled check complete — ${event.needsAttention} need attention`)
         }
@@ -128,9 +130,13 @@ async function streamSweep(req, res) {
       fresh: url.searchParams.get('fresh') === '1',
       signal: controller.signal,
     })) {
-      // A finished sweep is what re-dates the watch. An abandoned one must not,
-      // or a run that died at three of thirty would look like a clean bill.
-      if (event.type === 'complete') await markChecked()
+      // A finished sweep is what re-dates the watch and enters the record. An
+      // abandoned one must do neither, or a run that died at three of thirty
+      // would pass for a clean bill of health.
+      if (event.type === 'complete') {
+        await recordRun(roster.project, event.findings)
+        await markChecked()
+      }
       res.write(`data: ${JSON.stringify(event)}\n\n`)
     }
   } catch (err) {
@@ -193,6 +199,17 @@ const routes = {
   'GET /api/roster': async (req, res) => json(res, 200, await loadRoster()),
 
   'GET /api/cadences': async (req, res) => json(res, 200, CADENCES),
+
+  /** What moved since the previous sweep — the reason a schedule is worth having. */
+  'GET /api/changes': async (req, res) => json(res, 200, await changes()),
+
+  /** One subcontractor's readings over time, collapsed to the moments it moved. */
+  'GET /api/timeline': async (req, res) => {
+    const { searchParams } = new URL(req.url, `http://localhost:${PORT}`)
+    const licence = searchParams.get('licence')
+    if (!licence) return json(res, 400, { error: 'licence is required' })
+    json(res, 200, await timelineFor(licence))
+  },
 
   'POST /api/roster/project': async (req, res) => {
     const patch = await body(req)
