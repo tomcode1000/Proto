@@ -198,6 +198,7 @@ async function brief(res) {
 const routes = {
   'GET /': (req, res) => page(res, 'index.html'),
   'GET /app': (req, res) => page(res, 'app.html'),
+  'GET /slides': (req, res) => page(res, 'slides.html'),
   'GET /api/sweep': streamSweep,
 
   'POST /api/kill': async (req, res) => {

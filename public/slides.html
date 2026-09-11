@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proto, deck</title>
+<style>
+  :root {
+    --ink: #151a2b; --body: #4e5770; --mute: #8a92a8;
+    --violet: #6d4aff; --violet-2: #9b6bff;
+    --critical: #f0434f; --ok: #14a06a; --amber: #f59e0b;
+    --sans: "Inter", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(760px 420px at 14% 2%, rgba(157,134,255,.28), transparent 60%),
+      radial-gradient(700px 400px at 90% 8%, rgba(120,180,255,.24), transparent 58%),
+      linear-gradient(168deg, #f2f1ff 0%, #eceafc 48%, #e8edfb 100%);
+    height: 100vh; overflow: hidden;
+  }
+  .deck { height: 100vh; display: grid; place-items: center; padding: 5vh 6vw; }
+  .slide { display: none; width: 100%; max-width: 1000px; animation: in .3s ease-out; }
+  .slide.on { display: block; }
+  @keyframes in { from { opacity: 0; transform: translateY(8px); } }
+
+  .eyebrow {
+    font: 600 11px var(--mono); letter-spacing: .18em; text-transform: uppercase;
+    color: var(--violet); margin-bottom: 18px;
+  }
+  h1 { font-size: clamp(38px, 6vw, 76px); line-height: 1.02; letter-spacing: -.035em; font-weight: 620; margin: 0; }
+  h1 .dot { color: var(--violet); }
+  h2 { font-size: clamp(28px, 4vw, 50px); line-height: 1.08; letter-spacing: -.03em; font-weight: 600; margin: 0 0 22px; }
+  p.lede { font-size: clamp(17px, 2vw, 24px); color: var(--body); margin: 22px 0 0; max-width: 760px; }
+  p.sub { font-size: clamp(15px, 1.6vw, 19px); color: var(--mute); margin: 14px 0 0; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 34px; }
+  .cols.three { grid-template-columns: repeat(3, 1fr); }
+  .card {
+    background: rgba(255,255,255,.78); border: 1px solid rgba(255,255,255,.9);
+    border-radius: 18px; padding: 22px 24px; box-shadow: 0 12px 30px rgba(60,50,140,.08);
+  }
+  .card .n { font: 600 11px var(--mono); letter-spacing: .14em; color: var(--violet); }
+  .card h3 { margin: 11px 0 7px; font-size: 19px; letter-spacing: -.02em; }
+  .card p { margin: 0; color: var(--body); font-size: 15px; }
+
+  .rows { margin-top: 32px; display: grid; gap: 12px; }
+  .row {
+    background: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.9);
+    border-left: 3px solid var(--critical); border-radius: 14px; padding: 16px 20px;
+    box-shadow: 0 10px 26px rgba(60,50,140,.07);
+  }
+  .row.ok { border-left-color: var(--ok); }
+  .row b { font-size: 17px; letter-spacing: -.015em; }
+  .row .lic { font: 12px var(--mono); color: var(--mute); margin-top: 3px; }
+  .row p { margin: 8px 0 0; color: var(--body); font-size: 15px; }
+  .tagx { float: right; font: 600 10.5px var(--mono); letter-spacing: .12em; padding: 5px 10px; border-radius: 7px; }
+  .tagx.bad { color: var(--critical); background: rgba(240,67,79,.1); }
+  .tagx.good { color: var(--ok); background: rgba(20,160,106,.11); }
+
+  .flow { display: flex; align-items: center; gap: 14px; margin-top: 34px; flex-wrap: wrap; }
+  .box {
+    background: rgba(255,255,255,.82); border: 1px solid rgba(255,255,255,.9); border-radius: 15px;
+    padding: 16px 20px; box-shadow: 0 10px 26px rgba(60,50,140,.07); flex: 1; min-width: 180px;
+  }
+  .box.hard { border-top: 3px solid var(--violet); }
+  .box.soft { border-top: 3px solid var(--violet-2); }
+  .box b { display: block; font-size: 16px; letter-spacing: -.015em; }
+  .box span { display: block; font-size: 13.5px; color: var(--mute); margin-top: 5px; }
+  .arrow { color: var(--mute); font-size: 22px; }
+
+  .quote {
+    margin-top: 32px; padding: 22px 26px; border-radius: 16px;
+    background: rgba(109,74,255,.07); border: 1px solid rgba(109,74,255,.16);
+    font-size: clamp(17px, 2vw, 22px); color: var(--ink); letter-spacing: -.015em;
+  }
+
+  .rail { position: fixed; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(21,26,43,.07); }
+  .rail i { display: block; height: 100%; background: var(--violet); transition: width .3s; }
+  .num {
+    position: fixed; right: 22px; bottom: 18px; font: 11px var(--mono); color: var(--mute);
+  }
+  .hint {
+    position: fixed; left: 22px; bottom: 16px; font: 11px var(--mono); color: var(--mute); opacity: .65;
+  }
+  body.clean .num, body.clean .hint { display: none; }
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <section class="slide on">
+    <div class="eyebrow">Proto</div>
+    <h1>Verified once<br>is not verified<span class="dot">.</span></h1>
+    <p class="lede">Continuous subcontractor licence verification, built on Strands Agents.</p>
+    <p class="sub">Two modules: a watch that runs itself, and a record that proves what changed.</p>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">The problem</div>
+    <h2>A licence can die in month seven.</h2>
+    <p class="lede">
+      A contractor runs twenty to forty subcontractors on a site. Each works under a qualifying
+      agent's state licence. Almost every firm checks those licences once, at onboarding, files the
+      certificate, and never looks again.
+    </p>
+    <div class="quote">Nobody is told when the state changes a status. The work continues, the draws continue, and the exposure sits with the general contractor.</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">What it costs</div>
+    <h2>The exposure lands on the GC.</h2>
+    <div class="cols three">
+      <div class="card"><div class="n">01</div><h3>Contracts stop working</h3><p>An agreement with an unlicensed contractor can be void and unenforceable, and the lien goes with it.</p></div>
+      <div class="card"><div class="n">02</div><h3>Cover can lapse</h3><p>Most general liability policies exclude work performed in violation of licensing law.</p></div>
+      <div class="card"><div class="n">03</div><h3>The citation is yours</h3><p>Under OSHA's multi employer policy the GC is the controlling employer on the site.</p></div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">What Proto does</div>
+    <h2>It ranks danger, not dates.</h2>
+    <div class="rows">
+      <div class="row">
+        <span class="tagx bad">CRITICAL</span>
+        <b>3JW Construction, Inc.</b>
+        <div class="lic">CCC1332414 · Certified Roofing Contractor</div>
+        <p>Registry reads Suspended. A permit was pulled under this licence on 26 Feb 2026. Work is in progress on a licence that cannot lawfully support it.</p>
+      </div>
+      <div class="row ok">
+        <span class="tagx good">CLEAR</span>
+        <b>24 Hr Air Service Inc</b>
+        <div class="lic">CAC1814637 · Certified Air Conditioning Contractor</div>
+        <p>Five permits on record, the last eight months ago. Licence is in good standing, so this is context, not exposure.</p>
+      </div>
+    </div>
+    <p class="sub">Both are carrying open work. Only one is a finding. A calendar reminder cannot tell them apart.</p>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">How it is built</div>
+    <h2>Facts first. Judgement second.</h2>
+    <div class="flow">
+      <div class="box hard"><b>Connectors</b><span>Live state register and county permits</span></div>
+      <span class="arrow">&rsaquo;</span>
+      <div class="box hard"><b>Exposure engine</b><span>Pure functions, unit tested, no model</span></div>
+      <span class="arrow">&rsaquo;</span>
+      <div class="box soft"><b>Strands graph</b><span>Triage, then the notice</span></div>
+    </div>
+    <div class="quote">The agent layer is handed findings that are already true. It decides what to do first and what to write. It cannot change a status, a date, or a permit count.</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Module two</div>
+    <h2>A sweep you can kill.</h2>
+    <p class="lede">
+      Thirty subcontractors is thirty rounds of network calls against two public services. If a run
+      dies at nine, starting from one is thirty more requests at a government portal to re learn
+      what was already known.
+    </p>
+    <div class="quote">Every verified subcontractor is committed to disk the moment it is known. Kill the run and it resumes at ten, not at one.</div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Close</div>
+    <h2>The check nobody remembers to run.</h2>
+    <div class="cols">
+      <div class="card"><div class="n">THE WATCH</div><h3>Runs itself</h3><p>Pick a cadence and a time. Proto sweeps with no browser open and messages you on Telegram only when something moved.</p></div>
+      <div class="card"><div class="n">THE RECORD</div><h3>Proves what changed</h3><p>Every sweep is kept. A licence current in January and delinquent in September is the whole case, and only exists if January was recorded.</p></div>
+    </div>
+    <p class="sub">Florida DBPR and county permit records. Public data, read for the purpose it was published for.</p>
+  </section>
+
+</div>
+
+<div class="rail"><i id="rail"></i></div>
+<div class="num" id="num"></div>
+<div class="hint">arrows or space to move · F fullscreen · C clean</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  let i = 0;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle("on", k === i));
+    document.getElementById("rail").style.width = ((i + 1) / slides.length) * 100 + "%";
+    document.getElementById("num").textContent = (i + 1) + " / " + slides.length;
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (["ArrowRight", " ", "PageDown", "Enter"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    if (["ArrowLeft", "PageUp", "Backspace"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    if (e.key === "Home") show(0);
+    if (e.key === "End") show(slides.length - 1);
+    if (e.key.toLowerCase() === "f") document.documentElement.requestFullscreen?.();
+    if (e.key.toLowerCase() === "c") document.body.classList.toggle("clean");
+  });
+  document.addEventListener("click", (e) => show(i + (e.clientX < innerWidth * 0.25 ? -1 : 1)));
+
+  show(0);
+</script>
+</body>
+</html>
