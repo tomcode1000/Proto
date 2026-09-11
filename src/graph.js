@@ -4,7 +4,7 @@
  * Facts are established before this runs: the registry and permit connectors
  * gather them and `engine/exposure.js` scores them, deterministically. The graph
  * is handed findings that are already true, and does the two things a language
- * model is genuinely good at — deciding what the site manager should do first,
+ * model is genuinely good at, deciding what the site manager should do first,
  * and writing the notice that goes out.
  *
  *   triage ──▶ notice
@@ -33,7 +33,7 @@ export async function buildGraph() {
       FACTS_RULE,
       'Put the findings in the order the site manager should act on them this morning,',
       'hardest consequence first. For each, give one line saying what to do and why it',
-      'cannot wait. Ignore anything marked NONE. Be brief — this is read on a phone.',
+      'cannot wait. Ignore anything marked NONE. Be brief, this is read on a phone.',
     ].join(' '),
   })
 

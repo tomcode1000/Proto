@@ -1,7 +1,7 @@
 /**
  * Florida DBPR licence verification.
  *
- * Reads the state's public licensee portal — the registry of record — rather
+ * Reads the state's public licensee portal, the registry of record, rather
  * than any cached copy of it. Proto exists because a licence can change status
  * between one check and the next, so this module never memoises a result.
  *
@@ -58,7 +58,25 @@ function extractToken(html) {
   return m?.[1] ?? null
 }
 
-async function request(jar, url, { method = 'GET', body = null } = {}) {
+/**
+ * A public portal under load times out and refuses connections. Those failures
+ * are transient, and retrying them is the whole difference between a report that
+ * says "could not check this licence" and one that wrongly says "no such licence
+ * exists", an accusation, about a real business, from a slow server.
+ */
+async function request(jar, url, options = {}, attempt = 1) {
+  const MAX_ATTEMPTS = 3
+  try {
+    return await requestOnce(jar, url, options)
+  } catch (err) {
+    const transient = /timeout|abort|fetch failed|ECONNRESET|socket hang up|HTTP 5\d\d/i.test(err.message)
+    if (!transient || attempt >= MAX_ATTEMPTS) throw err
+    await sleep(attempt * 1500)
+    return request(jar, url, options, attempt + 1)
+  }
+}
+
+async function requestOnce(jar, url, { method = 'GET', body = null } = {}) {
   await throttle()
   const res = await fetch(url, {
     method,
@@ -242,7 +260,7 @@ function extractPagerFields(html) {
 
 /**
  * Walk a county's licence roll for one profession.
- * `licenseType` is required — the portal returns zero records without it.
+ * `licenseType` is required, the portal returns zero records without it.
  *
  * @returns {Promise<{total:number, records:object[]}>}
  */

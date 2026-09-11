@@ -2,8 +2,8 @@
  * Durable run journal.
  *
  * A roster sweep is a long sequence of network calls against two public
- * services. If it dies at subcontractor nine — the machine sleeps, the VPN
- * drops, someone closes the laptop — starting again from one is not merely
+ * services. If it dies at subcontractor nine, the machine sleeps, the VPN
+ * drops, someone closes the laptop, starting again from one is not merely
  * slow. It is thirty more requests at a government portal to re-learn what was
  * already known, and on a large roster it is the reason the check quietly stops
  * being run at all.

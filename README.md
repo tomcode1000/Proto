@@ -42,7 +42,7 @@ The ranking is the point. Real output, live data, nothing seeded:
 
 · ok  24 HR AIR SERVICE INC
    CAC1814637 · Certified Air Conditioning Contractor
-   → 5 permits on record, the last 8 months ago (2025-12-22) — work from that job
+   → 5 permits on record, the last 8 months ago (2025-12-22), work from that job
      may still be open. Licence is in good standing, so this is context, not exposure.
 
 4 of 16 need attention.
@@ -88,7 +88,7 @@ reasoning about liability is the failure mode this project exists to avoid.
 
 A sweep is a long sequence of calls against two public services. If it dies at
 subcontractor nine, restarting from one means thirty more requests at a government
-portal to re-learn what was already known — and on a large roster that is why the
+portal to re-learn what was already known, and on a large roster that is why the
 check quietly stops being run at all.
 
 Each subcontractor is committed to a run journal the moment it is verified, written
@@ -100,10 +100,10 @@ name.
 $ PROTO_CRASH_AFTER=5 npm run sweep
   checking CCC1327792 … CRITICAL
   ...
-  [simulated crash after 5 verified — journal holds 5]
+  [simulated crash after 5 verified, journal holds 5]
 
 $ npm run sweep
-  resuming — 5 of 16 already verified, picking up from there
+  resuming, 5 of 16 already verified, picking up from there
   CCC1327792 … already verified, skipping
   ...
   4 of 16 need attention.
@@ -112,13 +112,13 @@ $ npm run sweep
 ## Adding subcontractors
 
 The people this is built for keep their roster in a spreadsheet, an email, or their
-head — never in a JSON file. So there are three ways in, and all three resolve the
+head, never in a JSON file. So there are three ways in, and all three resolve the
 business name from the registry rather than trusting what was typed:
 
-- **One at a time** — paste a licence number; Proto names it and catches a typo immediately
-- **Paste a list** — a column straight out of a spreadsheet; any line containing a
+- **One at a time**, paste a licence number; Proto names it and catches a typo immediately
+- **Paste a list**, a column straight out of a spreadsheet; any line containing a
   licence number works, headers are ignored
-- **Google Sheet** — paste the link. Proto reads the published CSV, so there is no
+- **Google Sheet**, paste the link. Proto reads the published CSV, so there is no
   OAuth, no API key, and the contractor keeps editing the sheet they already use
 
 ## Control room
@@ -127,7 +127,7 @@ business name from the registry rather than trusting what was typed:
 npm run serve      # http://localhost:8787
 ```
 
-A live dashboard over the same sweep the CLI runs — not a reimplementation, the
+A live dashboard over the same sweep the CLI runs, not a reimplementation, the
 same event stream. Subcontractors resolve one by one as the registry answers,
 findings rank themselves by exposure, and **Kill mid-sweep** stops the run the way
 a closed laptop would. Press *Run sweep* again and it continues from the journal
@@ -166,7 +166,7 @@ Swapping providers is one environment variable. No code change.
 - `BeforeNodeCallEvent` / `AfterNodeCallEvent` for node-level lifecycle
 - Bounded execution via `maxSteps`, `timeout`, `nodeTimeout`
 
-Node 22+. Connectors use built-ins only — no scraping or HTTP dependencies.
+Node 22+. Connectors use built-ins only, no scraping or HTTP dependencies.
 
 ## Scope
 
@@ -174,7 +174,7 @@ Implemented: Florida DBPR, Miami-Dade permit activity, exposure scoring, resumab
 sweep, triage and notice.
 
 The registry and permit sources are each one module behind a small interface. Adding
-a county or a second state is an entry in `COUNTY_SOURCES` and a connector — not a
+a county or a second state is an entry in `COUNTY_SOURCES` and a connector, not a
 redesign. Insurance certificates and workers' compensation exemptions are the natural
 next source and are deliberately not implemented here.
 

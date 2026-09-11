@@ -1,4 +1,4 @@
-# Proto — build plan
+# Proto, build plan
 
 **Deadline:** Mon 14 Sep 2026, 5:00 PM PDT (= 1:00 AM Tue 15 Sep WAT)
 
@@ -6,7 +6,7 @@
 
 A general contractor hires ~30 subcontractors on a project. Each sub works under a
 qualifier's state licence. Most firms verify those licences **once**, at onboarding,
-and never again — which leaves them exposed for the rest of the project.
+and never again, which leaves them exposed for the rest of the project.
 
 A licence can go delinquent in month seven of a fourteen-month job. Nobody is
 notified. The sub keeps working, keeps pulling permits, keeps getting paid, on a
@@ -29,18 +29,18 @@ dashboard.
 
 ## Days
 
-- **Day 0** — DONE. Accounts, repo, SDK, smoke gate passing.
-- **Day 1** — DONE. Live DBPR + permit connectors, deterministic exposure engine
+- **Day 0**, DONE. Accounts, repo, SDK, smoke gate passing.
+- **Day 1**, DONE. Live DBPR + permit connectors, deterministic exposure engine
       (7 unit tests), 16-subcontractor roster sourced from the live registry.
-- **Day 2** — DONE. Strands Graph (triage -> notice), run journal with atomic
+- **Day 2**, DONE. Strands Graph (triage -> notice), run journal with atomic
       per-subcontractor commits. Killed at 5 of 16, resumed at 6, completed.
-- **Day 3** — README and architecture diagram DONE. Remaining: public GitHub repo,
+- **Day 3**, README and architecture diagram DONE. Remaining: public GitHub repo,
       5-minute video (budget 4 hours), Devpost form. Submit in the afternoon.
 
 ## Scoring notes
 
 Judged equally on Technical Implementation, Design, Potential Impact, Creativity &
-Originality, Presentation — plus "how thoroughly and skillfully does the project use
+Originality, Presentation, plus "how thoroughly and skillfully does the project use
 Strands Agents?"
 
 So use the real primitives, not a thin wrapper: `tool()` with Zod schemas,
@@ -56,4 +56,4 @@ and the **kill-and-resume** on camera at minute four.
 - Explanations are recomputed from record fields. The model never invents a reason.
 - Licence maths is pure functions, unit-tested. No LLM in the arithmetic.
 - The README must carry a disclosure line for pre-existing modules incorporated
-  into the project — the rules require it.
+  into the project, the rules require it.

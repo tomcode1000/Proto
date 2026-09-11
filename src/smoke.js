@@ -48,10 +48,10 @@ async function main() {
   console.log('\n--- agent ---')
   console.log(String(result))
   console.log('\n--- hooks fired ---')
-  console.log(traced.length ? traced.join('  ->  ') : '(none — tool was not called)')
+  console.log(traced.length ? traced.join('  ->  ') : '(none, tool was not called)')
 
   const ok = traced.includes('before:lookup_license') && traced.includes('after:lookup_license')
-  console.log(`\nDay-0 gate: ${ok ? 'PASS' : 'FAIL'} — model reached, tool executed, hooks fired.`)
+  console.log(`\nDay-0 gate: ${ok ? 'PASS' : 'FAIL'}, model reached, tool executed, hooks fired.`)
   process.exit(ok ? 0 : 1)
 }
 

@@ -26,7 +26,7 @@ async function throttle() {
 }
 
 /**
- * County permit sources. Adding a county is adding an entry here — the field
+ * County permit sources. Adding a county is adding an entry here, the field
  * names differ per county, so they are declared rather than assumed.
  */
 export const COUNTY_SOURCES = {
@@ -89,7 +89,7 @@ export async function getPermitActivity(licenseNumber, opts = {}) {
   // exposure and could hide a critical finding. Refuse the result instead.
   if (data.exceededTransferLimit) {
     throw new Error(
-      `Permit service truncated results for ${licenseNumber} — refusing a partial count.`,
+      `Permit service truncated results for ${licenseNumber}, refusing a partial count.`,
     )
   }
 

@@ -2,92 +2,20 @@
   "project": "",
   "generalContractor": "",
   "county": "MIAMI-DADE",
-  "subcontractors": [
-    {
-      "name": "21 CONSTRUCTION GROUP",
-      "licenseNumber": "CCC1327792",
-      "trade": "roofing"
-    },
-    {
-      "name": "3JW CONSTRUCTION, INC.",
-      "licenseNumber": "CCC1332414",
-      "trade": "roofing"
-    },
-    {
-      "name": "1 UP CONTRACTING LLC",
-      "licenseNumber": "CCC1335763",
-      "trade": "roofing"
-    },
-    {
-      "name": "21 CONSTRUCTION, INC.",
-      "licenseNumber": "CCC1336857",
-      "trade": "roofing"
-    },
-    {
-      "name": "2R BUILDERS CORP",
-      "licenseNumber": "CCC1337629",
-      "trade": "roofing"
-    },
-    {
-      "name": "2R ROOFING LLC",
-      "licenseNumber": "CCC1336222",
-      "trade": "roofing"
-    },
-    {
-      "name": "(THE) PLUMBING EXPERTS INC",
-      "licenseNumber": "CAC1816169",
-      "trade": "hvac"
-    },
-    {
-      "name": "1 ON AIR",
-      "licenseNumber": "CAC1824486",
-      "trade": "hvac"
-    },
-    {
-      "name": "1ST AIR CONDITIONING CORP",
-      "licenseNumber": "CAC1817297",
-      "trade": "hvac"
-    },
-    {
-      "name": "24 HR AIR SERVICE INC",
-      "licenseNumber": "CAC1814637",
-      "trade": "hvac"
-    },
-    {
-      "name": "21ST PLUMBING SERVICES INC",
-      "licenseNumber": "CFC1432558",
-      "trade": "plumbing"
-    },
-    {
-      "name": "\"A\" ROOTER INC.",
-      "licenseNumber": "CFC1428587",
-      "trade": "plumbing"
-    },
-    {
-      "name": "1 A BACKFLOW AND SERVICES, LLC",
-      "licenseNumber": "CFC1429608",
-      "trade": "plumbing"
-    },
-    {
-      "name": "1ST CHOICE PLUMBING AND RENOVATION, LLC",
-      "licenseNumber": "CFC1430177",
-      "trade": "plumbing"
-    },
-    {
-      "name": "2 BROS PLUMBING, LLC",
-      "licenseNumber": "CFC1429225",
-      "trade": "plumbing"
-    },
-    {
-      "name": "JEND PLUMBING CONTRACTORS INC",
-      "licenseNumber": "CFC1429771",
-      "trade": "plumbing",
-      "resolved": true
-    }
-  ],
+  "subcontractors": [],
   "schedule": {
     "cadence": "weekly",
+    "timeOfDay": "07:30",
+    "dayOfWeek": 3,
     "lastRun": null,
-    "nextDue": "2026-09-18T15:24:04.727Z"
+    "nextDue": "2026-09-16T11:30:00.000Z"
+  },
+  "notify": {
+    "telegram": {
+      "botToken": "",
+      "chatId": "",
+      "enabled": false
+    },
+    "onlyOnChange": true
   }
 }

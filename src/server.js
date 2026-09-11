@@ -11,6 +11,7 @@ import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { runSweep } from './sweeper.js'
 import { recordRun, changes, timelineFor } from './history.js'
+import { alertOnChange, sendTelegram } from './notify.js'
 import {
   loadRoster,
   saveRoster,
@@ -84,7 +85,7 @@ function startWatch() {
     if (!roster.schedule?.nextDue) return
     if (new Date(roster.schedule.nextDue) > new Date()) return
 
-    console.log(`  scheduled check due — sweeping ${roster.subcontractors.length} subcontractors`)
+    console.log(`  scheduled check due, sweeping ${roster.subcontractors.length} subcontractors`)
     const controller = new AbortController()
     current = controller
 
@@ -93,7 +94,14 @@ function startWatch() {
         if (event.type === 'complete') {
           await recordRun(roster.project, event.findings)
           await markChecked()
-          console.log(`  scheduled check complete — ${event.needsAttention} need attention`)
+          const alert = await alertOnChange(await loadRoster(), await changes()).catch((err) => ({
+            sent: false,
+            reason: err.message,
+          }))
+          console.log(
+            `  scheduled check complete, ${event.needsAttention} need attention` +
+              (alert.sent ? ', alert sent' : ''),
+          )
         }
       }
     } catch (err) {
@@ -136,6 +144,9 @@ async function streamSweep(req, res) {
       if (event.type === 'complete') {
         await recordRun(roster.project, event.findings)
         await markChecked()
+        await alertOnChange(await loadRoster(), await changes()).catch((err) =>
+          console.error('  alert failed:', err.message),
+        )
       }
       res.write(`data: ${JSON.stringify(event)}\n\n`)
     }
@@ -200,7 +211,18 @@ const routes = {
 
   'GET /api/cadences': async (req, res) => json(res, 200, CADENCES),
 
-  /** What moved since the previous sweep — the reason a schedule is worth having. */
+  /** What moved since the previous sweep, the reason a schedule is worth having. */
+  'POST /api/notify/test': async (req, res) => {
+    try {
+      const { botToken, chatId } = await body(req)
+      await sendTelegram({ botToken, chatId }, 'Proto is connected. You will hear from it when a licence moves.')
+      json(res, 200, { ok: true })
+    } catch (err) {
+      json(res, 400, { error: err.message })
+    }
+  },
+
+  /** What moved since the previous sweep, which is why a schedule is worth having. */
   'GET /api/changes': async (req, res) => json(res, 200, await changes()),
 
   /** One subcontractor's readings over time, collapsed to the moments it moved. */
@@ -217,6 +239,9 @@ const routes = {
     for (const key of ['project', 'generalContractor', 'county']) {
       if (patch[key] != null) roster[key] = patch[key]
     }
+    if (patch.notify) roster.notify = { ...roster.notify, ...patch.notify }
+    if (patch.timeOfDay != null) roster.schedule = { ...roster.schedule, timeOfDay: patch.timeOfDay }
+    if (patch.dayOfWeek != null) roster.schedule = { ...roster.schedule, dayOfWeek: Number(patch.dayOfWeek) }
     if (patch.cadence != null) {
       // Changing the cadence re-dates the next check from now, so a person who
       // switches from monthly to weekly is not left waiting out the old month.

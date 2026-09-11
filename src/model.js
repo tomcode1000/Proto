@@ -6,7 +6,7 @@
  * environment variable, no code change.
  *
  * Tool calling is the core of this agent, so provider choice matters more than
- * usual — a model with weak function-calling support will fail in ways that look
+ * usual, a model with weak function-calling support will fail in ways that look
  * like application bugs.
  */
 import { BedrockModel } from '@strands-agents/sdk'

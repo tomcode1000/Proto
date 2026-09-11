@@ -2,7 +2,7 @@
  * Sweep history.
  *
  * Proto re-checks a roster on a schedule, but a schedule only pays for itself if
- * somebody can see what moved. Current state answers "is this licence valid?" —
+ * somebody can see what moved. Current state answers "is this licence valid?" ,
  * which a person could look up themselves. History answers the question they
  * cannot: "what changed since the last time anyone looked?"
  *
@@ -77,7 +77,7 @@ export async function recordRun(project, findings) {
  * The interesting events are asymmetric on purpose. A licence that became a
  * finding is urgent. One that stopped being a finding is reassurance. A status
  * that changed without crossing into a finding is still worth saying, because it
- * is how a licence usually dies — quietly, one step at a time.
+ * is how a licence usually dies, quietly, one step at a time.
  */
 export async function changes() {
   const { runs } = await load()

@@ -2,7 +2,7 @@
  * Roster input.
  *
  * The people this is built for keep their subcontractor list in a spreadsheet,
- * an email, or their head — never in a JSON file. So a roster can be built three
+ * an email, or their head, never in a JSON file. So a roster can be built three
  * ways, and all three converge on the same shape:
  *
  *   1. one licence number at a time, with the name resolved from the registry
@@ -51,11 +51,36 @@ export const CADENCES = {
   off: { label: 'Only when I ask', days: null, blurb: 'No automatic checks. You run them yourself.' },
 }
 
+export const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+/**
+ * When the next check lands.
+ *
+ * A cadence alone would fire at whatever hour the last run happened to finish.
+ * People want the report waiting for them, so the time of day is theirs to pick,
+ * and a weekly check also gets a day of the week.
+ */
 export function nextDueFrom(schedule) {
   const days = CADENCES[schedule?.cadence]?.days
   if (!days) return null
+
+  const [hh, mm] = String(schedule.timeOfDay ?? '08:00').split(':').map(Number)
   const from = schedule.lastRun ? new Date(schedule.lastRun) : new Date()
-  return new Date(from.getTime() + days * 86_400_000).toISOString()
+
+  const due = new Date(from)
+  due.setHours(hh || 0, mm || 0, 0, 0)
+  if (due <= from) due.setDate(due.getDate() + 1)
+
+  if (days === 1) return due.toISOString()
+
+  if (days === 7 && schedule.dayOfWeek != null) {
+    // Walk forward to the chosen weekday rather than landing seven days out.
+    while (due.getDay() !== Number(schedule.dayOfWeek)) due.setDate(due.getDate() + 1)
+    return due.toISOString()
+  }
+
+  due.setDate(due.getDate() + (days - 1))
+  return due.toISOString()
 }
 
 /** Whole days until the next check. Negative means it is overdue. */
@@ -70,8 +95,20 @@ export async function loadRoster() {
     ? JSON.parse(raw)
     : { project: '', generalContractor: '', county: 'MIAMI-DADE', subcontractors: [] }
 
-  roster.schedule ??= { cadence: 'weekly', lastRun: null, nextDue: null }
+  roster.schedule ??= {
+    cadence: 'weekly',
+    timeOfDay: '08:00',
+    dayOfWeek: 1,
+    lastRun: null,
+    nextDue: null,
+  }
+  roster.schedule.timeOfDay ??= '08:00'
+  roster.schedule.dayOfWeek ??= 1
   roster.schedule.nextDue ??= nextDueFrom(roster.schedule)
+
+  // Alerts are opt in, and quiet by default: a channel that reports clean runs
+  // gets muted, and a muted channel reports nothing at all.
+  roster.notify ??= { telegram: { botToken: '', chatId: '', enabled: false }, onlyOnChange: true }
   return roster
 }
 
@@ -148,7 +185,7 @@ export function parseLines(text) {
       .map((c) => c.trim().replace(/^["']|["']$/g, ''))
       .filter(Boolean)
 
-    // A trade column holds a single word — "roofing", "HVAC", "plumbing".
+    // A trade column holds a single word, "roofing", "HVAC", "plumbing".
     // A company name may contain the same word without being one: "Gotcha
     // Covered Roofing LLC" and "Westdade Air" are names. So a cell counts as a
     // trade only when it is one word (or a known two-word trade), never merely

@@ -6,7 +6,7 @@
  * evidence. This is deliberate: a language model narrating its own reasoning
  * about money and liability is the failure mode this project exists to avoid.
  *
- * The judgement being made is not "is this licence expiring" — a calendar can
+ * The judgement being made is not "is this licence expiring", a calendar can
  * do that. It is "is this licence carrying work right now", which needs the
  * registry and the permit record together.
  */
@@ -43,7 +43,7 @@ export function scoreExposure({ license, permits, trade, today = new Date() }) {
       level: 'HIGH',
       score: 70,
       carryingWork: false,
-      reasons: ['No matching licence in the state registry — standing cannot be confirmed.'],
+      reasons: ['No matching licence in the state registry, standing cannot be confirmed.'],
       action: 'Confirm the licence number with the subcontractor before any further work or payment.',
     }
   }
@@ -56,7 +56,7 @@ export function scoreExposure({ license, permits, trade, today = new Date() }) {
   const monthsSince = permits?.monthsSinceLastPermit ?? null
 
   // Work plausibly still open. A lapsed licence cannot pull new permits, so
-  // recency of the last permit — not a current-year count — is the signal that
+  // recency of the last permit, not a current-year count, is the signal that
   // a job is running under a credential that has since died.
   const openWork = monthsSince !== null && monthsSince <= 24
   const carryingWork = current > 0 || openWork
@@ -92,7 +92,7 @@ export function scoreExposure({ license, permits, trade, today = new Date() }) {
       current > 0
         ? `${current} permit${current === 1 ? '' : 's'} pulled under this licence this year` +
           (latest ? `, most recently ${latest}.` : '.')
-        : `${total} permit${total === 1 ? '' : 's'} on record, the last ${monthsSince} months ago (${latest}) — ` +
+        : `${total} permit${total === 1 ? '' : 's'} on record, the last ${monthsSince} months ago (${latest}), ` +
           'work from that job may still be open.'
     if (score > 0) {
       // Recent work weighs more than old work: a job from eight months ago is
@@ -129,7 +129,7 @@ function actionFor(score, dead, carryingWork) {
   if (dead && carryingWork) return 'Stop work and withhold the next draw until the licence is reinstated.'
   if (dead) return 'Do not schedule or pay this subcontractor until the licence is reinstated.'
   if (score >= 30) return 'Request proof of renewal before the next draw.'
-  if (score > 0) return 'Monitor — no action needed this cycle.'
+  if (score > 0) return 'Monitor, no action needed this cycle.'
   return 'None.'
 }
 

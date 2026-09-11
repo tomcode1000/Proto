@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Proto — Control Room</title>
+<title>Proto, Control Room</title>
 <style>
   :root {
     --ink: #1a1f2e;
@@ -56,12 +56,16 @@
       radial-gradient(46% 32% at 30% 62%, rgba(147,168,245,.45), transparent 70%),
       radial-gradient(40% 26% at 74% 88%, rgba(196,171,245,.42), transparent 72%);
   }
-  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; }
+  .brand { display: flex; align-items: center; gap: 9px; padding: 2px 6px 14px; }
+  .brand .mark { display: block; }
+  .brand .mark b { display: block; font-size: 14.5px; letter-spacing: -.01em; line-height: 1.1; }
+  .brand .mark span { display: block; font: 9.5px var(--mono); letter-spacing: .14em;
+                      text-transform: uppercase; color: #8279b0; margin-top: 2px; }
   .logo {
-    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
-    background: linear-gradient(140deg, var(--violet), var(--violet-2));
-    color: #fff; font-weight: 700; font-size: 15px;
+    width: 31px; height: 31px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(140deg, var(--violet), var(--violet-2)); color: #fff; flex: none;
   }
+  .logo .i { width: 17px; height: 17px; stroke-width: 1.8; }
   .brand b { font-size: 15.5px; letter-spacing: -.01em; }
 
   .switcher {
@@ -69,7 +73,10 @@
     border-radius: 11px; padding: 9px 12px; font: 500 13px var(--sans); color: var(--ink);
     display: flex; align-items: center; gap: 8px; cursor: default;
   }
-  .switcher span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .switcher > span:not(.ic) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .switcher .ic { color: var(--violet); display: grid; place-items: center; }
+  .switcher .ic .i { width: 15px; height: 15px; }
+  .switcher.unset > span:not(.ic) { color: var(--mute); }
   .switcher em { margin-left: auto; color: var(--mute); }
   .switcher em .i { width: 15px; height: 15px; }
 
@@ -335,6 +342,19 @@
   .rowlink { cursor: pointer; }
   .rowlink:hover { background: rgba(108,92,231,.035); }
 
+  .toggle { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 500; cursor: pointer; margin: 0; }
+  .toggle input { width: 34px; height: 20px; appearance: none; background: rgba(26,31,46,.16);
+                  border-radius: 999px; position: relative; cursor: pointer; transition: .15s; flex: none; }
+  .toggle input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+                         border-radius: 999px; background: #fff; transition: .15s; }
+  .toggle input:checked { background: var(--violet); }
+  .toggle input:checked::after { transform: translateX(14px); }
+
+  .ev .ic.warn { background: rgba(217,122,43,.12); color: var(--high); }
+  .banner { display: flex; gap: 11px; align-items: flex-start; padding: 13px 15px; border-radius: 12px;
+            background: rgba(217,122,43,.09); color: #96551c; font-size: 13px; margin-top: 14px; }
+  .banner .i { width: 16px; height: 16px; margin-top: 1px; flex: none; }
+
   /* setup */
   .stepbar {
     display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
@@ -387,9 +407,12 @@
 <body>
 <div class="layout">
   <aside>
-    <div class="brand"><span class="logo">P</span><b>Proto</b></div>
+    <div class="brand">
+      <span class="logo"><svg class="i"><use href="#i-shield"/></svg></span>
+      <span class="mark"><b>Proto</b><span>Licence watch</span></span>
+    </div>
 
-    <button class="switcher"><span id="swProject">Loading…</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
+    <button class="switcher"><span class="ic"><svg class="i"><use href="#i-building"/></svg></span><span id="swProject">Loading</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
     <input class="seek" id="seek" type="text" placeholder="Search subcontractors">
 
     <div class="navlabel">Workspace</div>
@@ -487,7 +510,7 @@
       <div class="cols" style="grid-template-columns: 1fr 1.15fr">
         <div class="panel">
           <h3>Add subcontractors</h3>
-          <p class="caption">Proto resolves the business name from the registry — you only need the licence number.</p>
+          <p class="caption">Proto resolves the business name from the registry, you only need the licence number.</p>
 
           <div class="tabs">
             <button class="on" data-tab="one">One at a time</button>
@@ -514,7 +537,7 @@
               <button class="go quiet" id="previewMany">Preview</button>
               <button class="go" id="importMany">Import</button>
             </div>
-            <p class="hint">Paste a column straight out of a spreadsheet. Any line containing a licence number works — headers are ignored.</p>
+            <p class="hint">Paste a column straight out of a spreadsheet. Any line containing a licence number works, headers are ignored.</p>
           </div>
 
           <div id="tab-sheet" style="display:none">
@@ -527,7 +550,7 @@
             </div>
             <p class="hint">
               In Sheets choose <code>File → Share → Publish to web</code>, or set link sharing to
-              “anyone with the link”. No sign-in, no API key — Proto just reads the published CSV.
+              “anyone with the link”. No sign-in, no API key, Proto just reads the published CSV.
             </p>
           </div>
 
@@ -583,7 +606,7 @@
 
         <div class="setrow">
           <label>Project name
-            <input type="text" id="setProject" placeholder="e.g. Bayfront Medical Office — Phase 2">
+            <input type="text" id="setProject" placeholder="e.g. Bayfront Medical Office, Phase 2">
             <em>Appears on every notice you send.</em>
           </label>
           <label>General contractor
@@ -602,10 +625,48 @@
         <h3 style="margin-top:26px">How often should Proto check?</h3>
         <p class="caption">
           A licence verified once is a snapshot. Verified on a schedule it becomes a watch, which
-          is the whole point — Proto re-checks on its own and speaks up only when something changed.
+          is the whole point, Proto re-checks on its own and speaks up only when something changed.
         </p>
         <div class="opts" id="cadenceOpts"></div>
+        <div class="setrow" id="timingRow" style="margin-top:16px">
+          <label>At what time
+            <input type="time" id="setTime" value="08:00">
+            <em>The report is waiting when you start work.</em>
+          </label>
+          <label id="dowWrap">On which day
+            <select id="setDow">
+              <option value="1">Monday</option><option value="2">Tuesday</option>
+              <option value="3">Wednesday</option><option value="4">Thursday</option>
+              <option value="5">Friday</option><option value="6">Saturday</option>
+              <option value="0">Sunday</option>
+            </select>
+            <em>Only applies to a weekly check.</em>
+          </label>
+        </div>
         <div class="watchnote" id="watchNote"></div>
+        <h3 style="margin-top:28px">Where should Proto reach you</h3>
+        <p class="caption">
+          Optional. Proto messages you on Telegram when something moves, and stays silent on a
+          clean run. A channel that pings every week gets muted, and a muted channel tells you
+          nothing on the week it mattered.
+        </p>
+
+        <div class="setrow">
+          <label>Bot token
+            <input type="text" id="tgToken" placeholder="From @BotFather" autocomplete="off">
+            <em>Message @BotFather on Telegram, send /newbot, then paste the token it gives you.</em>
+          </label>
+          <label>Chat ID
+            <input type="text" id="tgChat" placeholder="Your chat or group id" autocomplete="off">
+            <em>Message @userinfobot to get yours, or add the bot to a group.</em>
+          </label>
+        </div>
+
+        <div class="field" style="align-items:center;gap:14px">
+          <button class="go quiet" id="tgTest" style="flex:none">Send a test message</button>
+          <label class="toggle"><input type="checkbox" id="tgOn"><span>Alert me when something changes</span></label>
+        </div>
+        <div class="said" id="tgSaid"></div>
 
         <button class="go" id="saveProject" style="margin-top:18px">Save project</button>
         <div class="said" id="setSaid"></div>
@@ -623,7 +684,7 @@
 <aside class="drawer" id="drawer" aria-hidden="true">
   <header>
     <div>
-      <h2 id="dwName">—</h2>
+      <h2 id="dwName">,</h2>
       <div class="lic" id="dwLic"></div>
     </div>
     <button class="shut" id="dwShut"><svg class="i"><use href="#i-x"/></svg></button>
@@ -666,8 +727,8 @@ $$("[data-tab]").forEach((btn) =>
 /* ── roster ─────────────────────────────────────────── */
 async function loadRoster() {
   roster = await (await fetch("/api/roster")).json();
-  $("#swProject").textContent = roster.project || "Untitled project";
-  $("#swGC").textContent = roster.generalContractor || "—";
+  $("#swProject").textContent = roster.project || "Name your project";
+  $("#swGC").textContent = roster.generalContractor || ",";
   $("#setProject").value = roster.project || "";
   $("#setGC").value = roster.generalContractor || "";
   $("#setCounty").value = roster.county || "MIAMI-DADE";
@@ -677,6 +738,17 @@ async function loadRoster() {
   $("#kRoster").textContent = n;
   $("#rosterCount").textContent = n + " on file";
   if (roster.schedule && roster.schedule.cadence) chosen = roster.schedule.cadence;
+  if (roster.schedule) {
+    $("#setTime").value = roster.schedule.timeOfDay || "08:00";
+    $("#setDow").value = String(roster.schedule.dayOfWeek == null ? 1 : roster.schedule.dayOfWeek);
+  }
+  if (roster.notify && roster.notify.telegram) {
+    $("#tgToken").value = roster.notify.telegram.botToken || "";
+    $("#tgChat").value = roster.notify.telegram.chatId || "";
+    $("#tgOn").checked = Boolean(roster.notify.telegram.enabled);
+  }
+  const sw = document.querySelector(".switcher");
+  if (sw) sw.classList.toggle("unset", !roster.project);
 
   const due = roster.schedule && roster.schedule.nextDue ? new Date(roster.schedule.nextDue) : null;
   const days = due ? Math.ceil((due - Date.now()) / 86400000) : null;
@@ -691,7 +763,7 @@ async function loadRoster() {
 
   $("#subgreeting").textContent = n
     ? "Proto is watching " + n + " subcontractors on " + (roster.project || "this project") + ". " + watching
-    : "No subcontractors yet — open Roster to add your first, or Settings to set up the project.";
+    : "No subcontractors yet, open Roster to add your first, or Settings to set up the project.";
 
   $("#rosterBody").innerHTML = n
     ? roster.subcontractors
@@ -727,7 +799,7 @@ $("#addOne").addEventListener("click", async () => {
   $("#addOne").textContent = "Add";
   if (r.error) say("#rosterSaid", r.error, false);
   else {
-    say("#rosterSaid", r.found ? "Added " + r.entry.name + " — " + r.licenseType + "." : "Added, but the registry has no such licence. Check the number.", r.found);
+    say("#rosterSaid", r.found ? "Added " + r.entry.name + ", " + r.licenseType + "." : "Added, but the registry has no such licence. Check the number.", r.found);
     $("#oneLic").value = "";
     loadRoster();
   }
@@ -743,7 +815,7 @@ async function preview(payload) {
   say("#rosterSaid", r.count + " licence numbers found.", true);
   $("#previewBox").innerHTML =
     "<table><thead><tr><th>Licence</th><th>Name in source</th><th>Trade</th></tr></thead><tbody>" +
-    r.rows.map((x) => "<tr><td class='lic'>" + esc(x.licenseNumber) + "</td><td>" + esc(x.name || "—") + "</td><td>" + esc(x.trade || "—") + "</td></tr>").join("") +
+    r.rows.map((x) => "<tr><td class='lic'>" + esc(x.licenseNumber) + "</td><td>" + esc(x.name || ",") + "</td><td>" + esc(x.trade || ",") + "</td></tr>").join("") +
     "</tbody></table>";
 }
 
@@ -784,14 +856,16 @@ async function renderCadences() {
   $$("[data-cad]").forEach((b) =>
     b.addEventListener("click", () => {
       chosen = b.dataset.cad;
-      $$("[data-cad]").forEach((o) => o.classList.toggle("on", o === b));
+      $("[data-cad]").forEach((o) => o.classList.toggle("on", o === b));
+      paintTiming();
       paintWatch();
     })
   );
+  paintTiming();
   paintWatch();
 }
 
-/** Say plainly when the next check lands — a schedule nobody can see is not one. */
+/** Say plainly when the next check lands, a schedule nobody can see is not one. */
 function paintWatch() {
   const note = $("#watchNote");
   const due = roster.schedule && roster.schedule.nextDue ? new Date(roster.schedule.nextDue) : null;
@@ -810,7 +884,7 @@ function paintWatch() {
   }
   if (chosen !== saved) {
     note.className = "watchnote due";
-    note.innerHTML = icon("alert") + "<span>Not saved yet — press <b>Save project</b> to move the watch to " +
+    note.innerHTML = icon("alert") + "<span>Not saved yet, press <b>Save project</b> to move the watch to " +
       esc(CADENCES[chosen].label.toLowerCase()) + ".</span>";
     return;
   }
@@ -827,12 +901,31 @@ function paintWatch() {
     "</span>";
 }
 
+function paintTiming() {
+  $("#dowWrap").style.display = chosen === "weekly" ? "" : "none";
+  $("#timingRow").style.display = chosen === "off" ? "none" : "";
+}
+
+$("#tgTest").addEventListener("click", async (e) => {
+  const btn = e.target;
+  btn.disabled = true; btn.textContent = "Sending";
+  const r = await api("/api/notify/test", { botToken: $("#tgToken").value.trim(), chatId: $("#tgChat").value.trim() });
+  btn.disabled = false; btn.textContent = "Send a test message";
+  say("#tgSaid", r.error ? r.error : "Sent. Check Telegram, then turn the alert on and save.", !r.error);
+});
+
 $("#saveProject").addEventListener("click", async () => {
   await api("/api/roster/project", {
     project: $("#setProject").value,
     generalContractor: $("#setGC").value,
     county: $("#setCounty").value,
     cadence: chosen,
+    timeOfDay: $("#setTime").value || "08:00",
+    dayOfWeek: $("#setDow").value,
+    notify: {
+      telegram: { botToken: $("#tgToken").value.trim(), chatId: $("#tgChat").value.trim(), enabled: $("#tgOn").checked },
+      onlyOnChange: true,
+    },
   });
   say("#setSaid", "Saved. " + (chosen === "off" ? "Automatic checks are off." : "Proto will check " + CADENCES[chosen].label.toLowerCase() + "."), true);
   await loadRoster();
@@ -924,11 +1017,11 @@ async function loadChanges() {
 
   const out = [
     ...c.appeared.map((x) => row("worse", "alert", x.name, x.licence,
-      "Became a finding — was " + esc(pretty(x.was)) + ", now <b>" + esc(pretty(x.status)) + "</b>. " + esc(x.level) + " exposure.")),
+      "Became a finding, was " + esc(pretty(x.was)) + ", now <b>" + esc(pretty(x.status)) + "</b>. " + esc(x.level) + " exposure.")),
     ...c.statusChanged.map((x) => row("worse", "rotate", x.name, x.licence,
       "Status moved from " + esc(pretty(x.was)) + " to <b>" + esc(pretty(x.status)) + "</b>.")),
     ...c.resolved.map((x) => row("better", "check", x.name, x.licence,
-      "No longer a finding — was " + esc(pretty(x.was)) + ", now <b>" + esc(pretty(x.status)) + "</b>.")),
+      "No longer a finding, was " + esc(pretty(x.was)) + ", now <b>" + esc(pretty(x.status)) + "</b>.")),
     ...c.added.map((x) => row("", "users", x.name, x.licence, "Added to the roster since the last check.")),
     ...c.removed.map((x) => row("", "x", x.name, x.licence, "Removed from the roster since the last check.")),
   ].join("");
@@ -950,10 +1043,10 @@ async function openSub(licence) {
 
   const cur = t.current;
   $("#dwFacts").innerHTML = [
-    ["Status now", cur ? esc(cur.statusRaw) : "—"],
-    ["Expires", cur && cur.expirationDate ? esc(cur.expirationDate) : "—"],
+    ["Status now", cur ? esc(cur.statusRaw) : ","],
+    ["Expires", cur && cur.expirationDate ? esc(cur.expirationDate) : ","],
     ["Readings kept", t.readings],
-    ["Permits on record", cur ? cur.permits : "—"],
+    ["Permits on record", cur ? cur.permits : ","],
   ].map((f) => "<div class='fact'><span>" + f[0] + "</span><b>" + f[1] + "</b></div>").join("");
 
   $("#dwTl").innerHTML = t.points.length
@@ -966,7 +1059,7 @@ async function openSub(licence) {
             "<div class='pt " + (bad ? "bad" : "good") + "'>" +
             "<div class='spine'><span class='node'></span><span class='line'></span></div>" +
             "<div class='body'><time>" + when(p.at) + "</time>" +
-            "<b>" + esc(p.statusRaw) + (p.first ? " — first reading" : "") + "</b>" +
+            "<b>" + esc(p.statusRaw) + (p.first ? ", first reading" : "") + "</b>" +
             "<p>" + (bad ? esc(p.level) + " exposure" : "In good standing") +
             (p.expirationDate ? " · expires " + esc(p.expirationDate) : "") +
             (p.lastPermit ? " · last permit " + esc(p.lastPermit) : "") + "</p></div></div>"
@@ -1003,7 +1096,7 @@ function sweep(fresh) {
 
     if (ev.type === "start") {
       $("#agentLine").textContent = ev.resumed
-        ? "Resuming — " + ev.alreadyVerified + " of " + ev.total + " already verified"
+        ? "Resuming, " + ev.alreadyVerified + " of " + ev.total + " already verified"
         : "Verifying " + ev.total + " subcontractors";
       $("#agentSub").textContent = ev.resumed
         ? "Picking up where the last run stopped. Nothing is checked twice."
@@ -1012,7 +1105,11 @@ function sweep(fresh) {
       if (ev.resumed) event("<svg class=\"i\"><use href=\"#i-rotate\"/></svg>", "Resumed from the journal", ev.alreadyVerified + " subcontractors were already banked.");
     }
 
-    if (ev.type === "skip") event("<svg class=\"i\"><use href=\"#i-skip\"/></svg>", esc(ev.entry.name), "Already verified in this run — skipped.");
+    if (ev.type === "unreachable")
+      event(icon("alert"), ev.sub.name || ev.sub.licenseNumber,
+        "The registry did not answer. Not recorded, so the next run asks again.", "warn");
+
+    if (ev.type === "skip") event("<svg class=\"i\"><use href=\"#i-skip\"/></svg>", esc(ev.entry.name), "Already verified in this run, skipped.");
     if (ev.type === "checking") event("<svg class=\"i\"><use href=\"#i-search\"/></svg>", "Checking " + ev.sub.licenseNumber, "Asking the registry about " + (ev.sub.name || "this licence") + ".");
 
     if (ev.type === "verified") {
@@ -1020,7 +1117,7 @@ function sweep(fresh) {
       event(
         lvl === "NONE" ? "<svg class=\"i\"><use href=\"#i-check\"/></svg>" : "<svg class=\"i\"><use href=\"#i-alert\"/></svg>",
         ev.entry.name,
-        lvl === "NONE" ? "In good standing." : lvl + " — " + ev.entry.exposure.reasons[0],
+        lvl === "NONE" ? "In good standing." : lvl + ", " + ev.entry.exposure.reasons[0],
         lvl === "NONE" ? "ok" : "crit"
       );
       $("#track").style.width = (ev.verified / ev.total) * 100 + "%";

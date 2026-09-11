@@ -4,7 +4,7 @@
  *
  * The sweep is resumable. Each subcontractor is committed to the run journal
  * the moment it is verified, so a run that dies at nine of sixteen resumes at
- * ten — not at one.
+ * ten, not at one.
  *
  * Usage:
  *   node --env-file=.env src/sweep.js [roster.json] [--fresh]
@@ -33,7 +33,7 @@ console.log(`${roster.generalContractor} · ${roster.subcontractors.length} subc
 console.log(`run ${journal.runId} · checked ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z`)
 
 if (journal.isResumed) {
-  console.log(`\n  resuming — ${journal.doneCount()} of ${roster.subcontractors.length} already verified, picking up from there`)
+  console.log(`\n  resuming, ${journal.doneCount()} of ${roster.subcontractors.length} already verified, picking up from there`)
 }
 console.log()
 
@@ -55,7 +55,7 @@ for (const sub of roster.subcontractors) {
   console.log(exposure.level)
 
   if (crashAfter && ++verified >= crashAfter) {
-    console.log(`\n  [simulated crash after ${verified} verified — journal holds ${journal.doneCount()}]`)
+    console.log(`\n  [simulated crash after ${verified} verified, journal holds ${journal.doneCount()}]`)
     process.exit(137)
   }
 }
