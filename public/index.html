@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proto · Control Room</title>
+<style>
+  :root {
+    --bg: #0c0e11; --panel: #14171c; --line: #232830;
+    --ink: #e6e9ee; --mute: #7d8795; --dim: #525b68;
+    --critical: #ff5d5d; --high: #ff9340; --medium: #e8c05a; --ok: #4a9e6b;
+    --accent: #5b9dff;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Inter, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
+
+  header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  h1 { font-size: 17px; margin: 0; letter-spacing: -.01em; }
+  .tag { font: 11px/1 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .09em; }
+  .project { margin-top: 10px; font-size: 20px; letter-spacing: -.02em; }
+  .meta { margin-top: 4px; font: 12px/1.5 var(--mono); color: var(--mute); }
+
+  .controls { display: flex; gap: 8px; margin: 20px 0 8px; flex-wrap: wrap; align-items: center; }
+  button {
+    font: 12px/1 var(--sans); font-weight: 550; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 7px;
+    padding: 9px 15px; cursor: pointer; transition: .12s;
+  }
+  button:hover:not(:disabled) { border-color: var(--dim); background: #191d23; }
+  button:disabled { opacity: .32; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #08101f; }
+  button.danger { border-color: #52262a; color: var(--critical); }
+  button.danger:hover:not(:disabled) { background: #1d1214; border-color: var(--critical); }
+
+  .bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin: 14px 0 6px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+  .status { font: 12px/1.5 var(--mono); color: var(--mute); min-height: 18px; }
+  .status .flash { color: var(--high); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  section h2 {
+    font: 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .1em;
+    color: var(--dim); margin: 0 0 12px; font-weight: 500;
+  }
+
+  .feed { font: 12px/1.9 var(--mono); max-height: 340px; overflow-y: auto;
+          border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; background: var(--panel); }
+  .feed div { display: flex; gap: 10px; }
+  .feed .lic { color: var(--mute); min-width: 106px; }
+  .feed .res { font-weight: 600; }
+
+  .card {
+    border: 1px solid var(--line); border-left-width: 3px; border-radius: 9px;
+    background: var(--panel); padding: 14px 16px; margin-bottom: 10px;
+  }
+  .card.CRITICAL { border-left-color: var(--critical); }
+  .card.HIGH { border-left-color: var(--high); }
+  .card.MEDIUM { border-left-color: var(--medium); }
+  .card.LOW, .card.NONE { border-left-color: var(--line); }
+  .card h3 { margin: 0; font-size: 14px; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .lvl { font: 10px/1 var(--mono); letter-spacing: .1em; padding: 4px 7px; border-radius: 4px; background: #1d222a; }
+  .CRITICAL .lvl { color: var(--critical); } .HIGH .lvl { color: var(--high); }
+  .MEDIUM .lvl { color: var(--medium); } .LOW .lvl, .NONE .lvl { color: var(--ok); }
+  .sub { font: 11px/1.6 var(--mono); color: var(--mute); margin-top: 3px; }
+  ul { margin: 9px 0 0; padding-left: 16px; }
+  li { margin: 3px 0; color: #cfd5de; }
+  .act { margin-top: 9px; font-size: 12px; color: var(--high); }
+  .NONE .act, .LOW .act { color: var(--ok); }
+
+  .prose { border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
+           padding: 16px 18px; white-space: pre-wrap; font-size: 13px; color: #cfd5de; }
+  .empty { color: var(--dim); font: 12px/1.6 var(--mono); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Proto</h1>
+      <span class="tag">Control Room</span>
+    </div>
+    <div class="project" id="project">—</div>
+    <div class="meta" id="meta">idle</div>
+  </header>
+
+  <div class="controls">
+    <button class="primary" id="start">Run sweep</button>
+    <button class="danger" id="kill" disabled>Kill mid-sweep</button>
+    <button id="fresh">Start fresh</button>
+    <button id="briefBtn" disabled>Brief the site manager</button>
+  </div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="status" id="status">Ready. A sweep verifies every subcontractor against the live state registry.</div>
+
+  <div class="grid">
+    <section>
+      <h2>Live verification</h2>
+      <div class="feed" id="feed"><span class="empty">no run yet</span></div>
+    </section>
+    <section>
+      <h2>Findings, ranked by exposure</h2>
+      <div id="findings"><span class="empty">a ranked roster appears when the sweep completes</span></div>
+    </section>
+  </div>
+
+  <section style="margin-top:26px">
+    <h2>Triage &amp; notice</h2>
+    <div id="brief"><span class="empty">run a sweep, then brief the site manager</span></div>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let source = null;
+
+const setRunning = (on) => {
+  $("start").disabled = on;
+  $("fresh").disabled = on;
+  $("kill").disabled = !on;
+};
+
+const colour = (l) =>
+  ({ CRITICAL: "var(--critical)", HIGH: "var(--high)", MEDIUM: "var(--medium)" }[l] || "var(--ok)");
+
+const esc = (s) =>
+  String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+function row(lic, text, col, pending) {
+  const d = document.createElement("div");
+  d.dataset.lic = lic;
+  d.dataset.pending = pending ? "1" : "";
+  d.innerHTML =
+    '<span class="lic">' + lic + '</span><span class="res" style="color:' + col + '">' + text + "</span>";
+  $("feed").appendChild(d);
+  $("feed").scrollTop = $("feed").scrollHeight;
+}
+
+function replaceLast(lic, text, col) {
+  const d = Array.from($("feed").children).reverse().find((x) => x.dataset.lic === lic && x.dataset.pending);
+  if (!d) return row(lic, text, col);
+  d.dataset.pending = "";
+  d.querySelector(".res").textContent = text;
+  d.querySelector(".res").style.color = col;
+}
+
+function render(findings) {
+  $("findings").innerHTML = findings
+    .map((f) => {
+      const type = f.license && f.license.licenseType ? f.license.licenseType : "unverified";
+      const reasons = f.exposure.reasons.map((r) => "<li>" + esc(r) + "</li>").join("");
+      const action =
+        f.exposure.level === "NONE" ? "" : '<div class="act">' + esc(f.exposure.action) + "</div>";
+      return (
+        '<div class="card ' + f.exposure.level + '">' +
+        "<h3><span>" + esc(f.name) + '</span><span class="lvl">' + f.exposure.level + "</span></h3>" +
+        '<div class="sub">' + f.licenseNumber + " · " + esc(type) + "</div>" +
+        "<ul>" + reasons + "</ul>" + action +
+        "</div>"
+      );
+    })
+    .join("");
+}
+
+function sweep(fresh) {
+  $("feed").innerHTML = "";
+  $("findings").innerHTML = '<span class="empty">verifying…</span>';
+  setRunning(true);
+  if (source) source.close();
+  source = new EventSource("/api/sweep" + (fresh ? "?fresh=1" : ""));
+
+  source.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+
+    if (ev.type === "start") {
+      $("project").textContent = ev.project;
+      $("meta").textContent =
+        ev.generalContractor + " · " + ev.total + " subcontractors · " + ev.county + " · run " + ev.runId;
+      $("status").innerHTML = ev.resumed
+        ? '<span class="flash">Resuming — ' + ev.alreadyVerified + " of " + ev.total +
+          " already verified. Picking up from there.</span>"
+        : "Verifying " + ev.total + " subcontractors against the live registry…";
+      $("bar").style.width = (ev.alreadyVerified / ev.total) * 100 + "%";
+    }
+
+    if (ev.type === "skip") row(ev.entry.licenseNumber, "already verified", "var(--dim)");
+    if (ev.type === "checking") row(ev.sub.licenseNumber, "checking…", "var(--dim)", true);
+
+    if (ev.type === "verified") {
+      replaceLast(ev.entry.licenseNumber, ev.entry.exposure.level, colour(ev.entry.exposure.level));
+      $("bar").style.width = (ev.verified / ev.total) * 100 + "%";
+    }
+
+    if (ev.type === "aborted") {
+      $("status").innerHTML =
+        '<span class="flash">Killed at ' + ev.verified + " of " + ev.total +
+        ". The journal holds every verified subcontractor — run the sweep again and it continues from there.</span>";
+      setRunning(false);
+      source.close();
+    }
+
+    if (ev.type === "complete") {
+      $("status").textContent = ev.needsAttention + " of " + ev.total + " need attention.";
+      $("bar").style.width = "100%";
+      render(ev.findings);
+      $("briefBtn").disabled = false;
+      setRunning(false);
+      source.close();
+    }
+
+    if (ev.type === "error") {
+      $("status").textContent = "Error: " + ev.message;
+      setRunning(false);
+      source.close();
+    }
+  };
+
+  source.onerror = () => {
+    setRunning(false);
+    source.close();
+  };
+}
+
+$("start").onclick = () => sweep(false);
+$("fresh").onclick = () => sweep(true);
+
+$("kill").onclick = async () => {
+  await fetch("/api/kill", { method: "POST" });
+  if (source) source.close();
+  setRunning(false);
+};
+
+$("briefBtn").onclick = async () => {
+  $("brief").innerHTML = '<span class="empty">thinking…</span>';
+  $("briefBtn").disabled = true;
+  const r = await fetch("/api/brief", { method: "POST" });
+  const d = await r.json();
+  $("brief").innerHTML = d.error
+    ? '<span class="empty">' + esc(d.error) + "</span>"
+    : Object.keys(d)
+        .map((k) => '<h2 style="margin-top:18px">' + k + '</h2><div class="prose">' + esc(d[k]) + "</div>")
+        .join("");
+  $("briefBtn").disabled = false;
+};
+</script>
+</body>
+</html>

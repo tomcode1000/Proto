@@ -109,6 +109,18 @@ $ npm run sweep
   4 of 16 need attention.
 ```
 
+## Control room
+
+```bash
+npm run serve      # http://localhost:8787
+```
+
+A live dashboard over the same sweep the CLI runs — not a reimplementation, the
+same event stream. Subcontractors resolve one by one as the registry answers,
+findings rank themselves by exposure, and **Kill mid-sweep** stops the run the way
+a closed laptop would. Press *Run sweep* again and it continues from the journal
+rather than starting over.
+
 ## Quick start
 
 ```bash
@@ -117,6 +129,7 @@ cp .env.example .env          # add a model provider key
 npm test                      # exposure engine, deterministic
 npm run sweep                 # verify the roster against the live registry
 npm run run                   # triage + notice over the verified findings
+npm run serve                 # control room at http://localhost:8787
 ```
 
 ## Model providers
