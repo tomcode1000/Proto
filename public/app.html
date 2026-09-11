@@ -41,9 +41,20 @@
 
   /* ── sidebar ─────────────────────────────────────────── */
   aside {
-    background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.8);
-    border-radius: 20px; padding: 18px 14px; height: calc(100vh - 36px);
-    position: sticky; top: 18px; display: flex; flex-direction: column;
+    position: sticky; top: 18px; height: calc(100vh - 36px);
+    border-radius: 22px; padding: 18px 14px; display: flex; flex-direction: column;
+    border: 1px solid rgba(255,255,255,.55);
+    background: rgba(255,255,255,.18);
+    overflow: hidden; isolation: isolate;
+  }
+  /* the wash itself: soft blooms bleeding into one another behind the nav */
+  aside::before {
+    content: ""; position: absolute; inset: -30%; z-index: -1; filter: blur(42px); opacity: .85;
+    background:
+      radial-gradient(38% 26% at 22% 12%, rgba(167,139,250,.55), transparent 70%),
+      radial-gradient(42% 30% at 78% 30%, rgba(244,168,205,.45), transparent 72%),
+      radial-gradient(46% 32% at 30% 62%, rgba(147,168,245,.45), transparent 70%),
+      radial-gradient(40% 26% at 74% 88%, rgba(196,171,245,.42), transparent 72%);
   }
   .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; }
   .logo {
@@ -54,7 +65,7 @@
   .brand b { font-size: 15.5px; letter-spacing: -.01em; }
 
   .switcher {
-    width: 100%; text-align: left; background: #fff; border: 1px solid var(--line);
+    width: 100%; text-align: left; background: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.7);
     border-radius: 11px; padding: 9px 12px; font: 500 13px var(--sans); color: var(--ink);
     display: flex; align-items: center; gap: 8px; cursor: default;
   }
@@ -63,13 +74,13 @@
   .switcher em .i { width: 15px; height: 15px; }
 
   .seek {
-    width: 100%; margin-top: 9px; background: rgba(255,255,255,.7); border: 1px solid var(--line);
+    width: 100%; margin-top: 9px; background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.7);
     border-radius: 11px; padding: 9px 12px; font: 13px var(--sans); color: var(--ink);
   }
   .seek::placeholder { color: var(--mute); }
 
   .navlabel {
-    font: 600 10.5px var(--mono); letter-spacing: .12em; color: var(--mute);
+    font: 600 10.5px var(--mono); letter-spacing: .12em; color: #7b6ea8;
     text-transform: uppercase; padding: 20px 10px 8px;
   }
   .navitem {
@@ -77,8 +88,8 @@
     background: transparent; border: 0; border-radius: 10px; cursor: pointer;
     padding: 9px 10px; font: 500 13.5px var(--sans); color: var(--body); text-align: left;
   }
-  .navitem:hover { background: rgba(255,255,255,.7); color: var(--ink); }
-  .navitem.on { background: var(--violet-soft); color: var(--violet); font-weight: 600; }
+  .navitem:hover { background: rgba(255,255,255,.55); color: var(--ink); }
+  .navitem.on { background: rgba(255,255,255,.86); color: var(--violet); font-weight: 600; }
   .navitem .ic { display: grid; place-items: center; }
   .navitem .ic .i { width: 16px; height: 16px; }
   .navitem .count {
@@ -88,15 +99,6 @@
   .navitem.on .count { background: #fff; color: var(--violet); }
   .navitem .count.alarm { background: rgba(217,72,79,.1); color: var(--critical); }
 
-  .whoami {
-    margin-top: auto; display: flex; align-items: center; gap: 10px;
-    background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px;
-  }
-  .av {
-    width: 28px; height: 28px; border-radius: 9px; background: var(--violet-soft);
-    color: var(--violet); display: grid; place-items: center; font-weight: 650; font-size: 12px;
-  }
-  .whoami small { display: block; color: var(--mute); font-size: 11.5px; }
 
   /* ── main ────────────────────────────────────────────── */
   main { padding-bottom: 40px; min-width: 0; }
@@ -277,13 +279,8 @@
     <button class="navitem" data-view="findings"><span class="ic"><svg class="i"><use href="#i-alert"/></svg></span>Findings<span class="count alarm" id="cFind">0</span></button>
     <button class="navitem" data-view="notices"><span class="ic"><svg class="i"><use href="#i-mail"/></svg></span>Notices</button>
 
-    <div class="navlabel">Manage</div>
+    <div class="navlabel" style="margin-top:auto">Manage</div>
     <button class="navitem" data-view="settings"><span class="ic"><svg class="i"><use href="#i-sliders"/></svg></span>Settings</button>
-
-    <div class="whoami">
-      <span class="av">GC</span>
-      <div><b style="font-size:13px" id="swGC">—</b><small>Compliance lead</small></div>
-    </div>
   </aside>
 
   <main>
@@ -517,7 +514,7 @@ async function loadRoster() {
         .map((s) =>
           "<tr><td>" + esc(s.name) + "</td><td class='lic'>" + esc(s.licenseNumber) + "</td><td>" +
           (s.trade ? "<span class='chip'>" + esc(s.trade) + "</span>" : "<span class='chip none'>unset</span>") +
-          "</td><td style='text-align:right'><button class='x' data-rm='" + esc(s.licenseNumber) + "'><svg class="i"><use href="#i-x"/></svg></button></td></tr>"
+          "</td><td style='text-align:right'><button class='x' data-rm='" + esc(s.licenseNumber) + "'><svg class='i'><use href='#i-x'/></svg></button></td></tr>"
         )
         .join("")
     : "<tr><td colspan='4'><div class='empty'><b>Roster is empty</b>Add a licence number on the left to begin.</div></td></tr>";

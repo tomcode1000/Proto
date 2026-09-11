@@ -47,6 +47,16 @@
   }
   .shell > * { position: relative; }
 
+  /* the arcs the floating tiles sit on */
+  .arcs {
+    position: absolute; left: 50%; top: 120px; width: 1400px; height: 760px;
+    transform: translateX(-50%); pointer-events: none; overflow: visible;
+    fill: none; stroke: rgba(108,92,231,.17); stroke-width: 1.1;
+  }
+  .arcs .soft { stroke: rgba(26,32,48,.07); }
+  .arcs .plus { stroke: rgba(108,92,231,.28); stroke-width: 1.3; stroke-linecap: round; }
+  @media (max-width: 1080px) { .arcs { display: none; } }
+
   nav { display: flex; align-items: center; gap: 30px; }
   .mark { font-weight: 700; letter-spacing: .18em; font-size: 15px; }
   nav a.link { color: var(--body); text-decoration: none; font-size: 14.5px; font-weight: 500; }
@@ -92,7 +102,7 @@
   .tile {
     position: absolute; width: 62px; height: 62px; border-radius: 19px;
     background: #fff; display: grid; place-items: center; font-size: 24px;
-    box-shadow: 0 14px 34px rgba(26,32,48,.13); border: 1px solid rgba(255,255,255,.9); color: var(--violet);
+    box-shadow: 0 14px 34px rgba(26,32,48,.13); border: 2.5px solid #c9d6f5; color: var(--violet);
   }
   .tile .i { width: 25px; height: 25px; stroke-width: 1.5; }
   .t1 { left: 5%;  top: 268px; transform: rotate(-11deg); }
@@ -135,38 +145,47 @@
     border-radius: 999px; padding: 7px 15px; font: 600 12.5px var(--sans); cursor: pointer;
   }
 
-  /* the finding panel, standing in for a device */
-  .device {
-    background: #14171c; border-radius: 24px; padding: 11px;
-    box-shadow: 0 20px 44px rgba(20,23,28,.3);
+  /* the handset */
+  .phone {
+    background: #191c22; border-radius: 34px; padding: 9px;
+    box-shadow: 0 24px 52px rgba(20,23,28,.32); align-self: center; width: 100%; max-width: 316px;
   }
-  .screen { background: #fff; border-radius: 17px; overflow: hidden; }
-  .screen header {
-    display: flex; align-items: center; gap: 10px; padding: 14px 16px;
-    border-bottom: 1px solid rgba(26,32,48,.07);
+  .screen { background: #fff; border-radius: 27px; overflow: hidden; }
+  .screen .bar { display: flex; align-items: center; gap: 9px; padding: 15px 15px 11px; }
+  .screen .bar .round {
+    width: 27px; height: 27px; border-radius: 999px; background: #f1f2f6;
+    display: grid; place-items: center; color: var(--body);
   }
-  .screen header .t { font-weight: 650; font-size: 14.5px; letter-spacing: -.01em; }
-  .screen header .who { margin-left: auto; font: 11px var(--mono); color: var(--mute); }
-  .finding { padding: 16px; }
-  .lvl {
-    display: inline-block; font: 600 10px var(--mono); letter-spacing: .12em;
-    color: var(--critical); background: rgba(217,72,79,.09);
-    padding: 5px 9px; border-radius: 6px;
+  .screen .bar .round .i { width: 14px; height: 14px; }
+  .screen .bar b { font-size: 15px; letter-spacing: -.015em; }
+
+  /* the picture */
+  .shot { position: relative; margin: 0 13px; border-radius: 17px; overflow: hidden; height: 158px; }
+  .shot svg { display: block; width: 100%; height: 100%; }
+  .shot .price {
+    position: absolute; right: 11px; bottom: 11px; background: #191c22; color: #fff;
+    border-radius: 999px; width: 58px; height: 58px; display: grid; place-items: center;
+    text-align: center; line-height: 1.1;
   }
-  .finding h3 { margin: 11px 0 2px; font-size: 15.5px; letter-spacing: -.015em; }
-  .finding .lic { font: 11.5px var(--mono); color: var(--mute); }
-  .finding ul { margin: 13px 0 0; padding-left: 16px; font-size: 13px; color: var(--body); }
-  .finding li { margin: 5px 0; }
-  .finding .act {
-    margin-top: 13px; padding-top: 12px; border-top: 1px solid rgba(26,32,48,.07);
-    font-size: 12.5px; color: var(--critical); font-weight: 550;
+  .shot .price b { display: block; font-size: 15px; letter-spacing: -.02em; }
+  .shot .price span { font-size: 8.5px; opacity: .72; letter-spacing: .04em; }
+
+  .rows { padding: 13px; display: grid; gap: 8px; }
+  .lrow {
+    display: flex; align-items: center; gap: 11px; background: #f7f8fa;
+    border-radius: 13px; padding: 11px 13px;
   }
-  .clear {
-    padding: 13px 16px; border-top: 1px solid rgba(26,32,48,.07);
-    display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--body);
+  .lrow .mk {
+    width: 30px; height: 30px; border-radius: 10px; background: #fff;
+    display: grid; place-items: center; color: var(--body); flex: none;
   }
-  .clear b { color: var(--ok); }
-  .clear .i { width: 16px; height: 16px; color: var(--ok); }
+  .lrow .mk .i { width: 15px; height: 15px; }
+  .lrow.bad .mk { color: var(--critical); }
+  .lrow b { display: block; font-size: 13px; letter-spacing: -.01em; }
+  .lrow span { font-size: 11.5px; color: var(--mute); }
+  .lrow .chev { margin-left: auto; color: var(--mute); }
+  .lrow .chev .i { width: 15px; height: 15px; }
+  .lrow.faded { opacity: .45; }
 
   .tags { display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; margin-top: 44px; }
   .tag { border-radius: 999px; padding: 12px 24px; font-size: 14px; font-weight: 550; }
@@ -205,6 +224,16 @@
     <span class="spacer"></span>
     <a class="pill-cta" href="/app">Open the control room</a>
   </nav>
+
+  <svg class="arcs" viewBox="0 0 1400 760" aria-hidden="true">
+    <circle cx="700" cy="880" r="640"/>
+    <circle cx="700" cy="950" r="790" class="soft"/>
+    <path class="soft" d="M0 470h1400"/>
+    <path class="plus" d="M212 300v22M201 311h22"/>
+    <path class="plus" d="M1188 300v22M1177 311h22"/>
+    <path class="plus" d="M330 560v18M321 569h18"/>
+    <path class="plus" d="M1070 560v18M1061 569h18"/>
+  </svg>
 
   <div class="tile t1"><svg class="i"><use href="#i-shield"/></svg></div>
   <div class="tile t2"><svg class="i"><use href="#i-doc"/></svg></div>
@@ -262,24 +291,69 @@
       </div>
     </div>
 
-    <div class="device">
+    <div class="phone">
       <div class="screen">
-        <header>
-          <span class="t">Findings</span>
-          <span class="who">ranked by exposure</span>
-        </header>
-        <div class="finding">
-          <span class="lvl">CRITICAL</span>
-          <h3>3JW Construction, Inc.</h3>
-          <div class="lic">CCC1332414 · Certified Roofing Contractor</div>
-          <ul>
-            <li>Registry reads “Suspended, Active”.</li>
-            <li>A permit was pulled under this licence on 26 Feb 2026.</li>
-            <li>Work is in progress on a licence that cannot lawfully support it.</li>
-          </ul>
-          <div class="act">Stop work and withhold the next draw until reinstated.</div>
+        <div class="bar">
+          <span class="round"><svg class="i"><use href="#i-chev"/></svg></span>
+          <b>Bayfront · Phase 2</b>
         </div>
-        <div class="clear" style="color:var(--body)"><svg class="i"><use href="#i-check"/></svg> <span><b>12 clear.</b> Verified against the registry 4 minutes ago.</span></div>
+
+        <div class="shot">
+          <svg viewBox="0 0 300 158" preserveAspectRatio="xMidYMid slice" aria-label="Construction site">
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#8ea6e8"/><stop offset="1" stop-color="#dfd6f2"/>
+              </linearGradient>
+              <linearGradient id="tower" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#3d4460"/><stop offset="1" stop-color="#5b6288"/>
+              </linearGradient>
+              <linearGradient id="tower2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#4e5578"/><stop offset="1" stop-color="#6f77a0"/>
+              </linearGradient>
+            </defs>
+            <rect width="300" height="158" fill="url(#sky)"/>
+            <circle cx="238" cy="40" r="19" fill="#fff" opacity=".5"/>
+            <rect x="16" y="74" width="46" height="84" fill="url(#tower2)"/>
+            <rect x="68" y="52" width="58" height="106" fill="url(#tower)"/>
+            <rect x="132" y="86" width="40" height="72" fill="url(#tower2)"/>
+            <rect x="178" y="62" width="54" height="96" fill="url(#tower)"/>
+            <rect x="238" y="96" width="48" height="62" fill="url(#tower2)"/>
+            <g fill="#cfd6ee" opacity=".62">
+              <rect x="76" y="62" width="8" height="9"/><rect x="90" y="62" width="8" height="9"/>
+              <rect x="104" y="62" width="8" height="9"/><rect x="76" y="78" width="8" height="9"/>
+              <rect x="90" y="78" width="8" height="9"/><rect x="104" y="78" width="8" height="9"/>
+              <rect x="186" y="74" width="8" height="9"/><rect x="200" y="74" width="8" height="9"/>
+              <rect x="214" y="74" width="8" height="9"/><rect x="186" y="90" width="8" height="9"/>
+              <rect x="200" y="90" width="8" height="9"/><rect x="214" y="90" width="8" height="9"/>
+              <rect x="24" y="88" width="8" height="9"/><rect x="38" y="88" width="8" height="9"/>
+              <rect x="140" y="100" width="8" height="9"/><rect x="154" y="100" width="8" height="9"/>
+            </g>
+            <g stroke="#2f3550" stroke-width="2.4" fill="none" stroke-linecap="round">
+              <path d="M112 40v-24M112 16h74M186 16v15"/><path d="M112 24 92 40"/>
+            </g>
+            <rect x="182" y="29" width="9" height="9" fill="#2f3550"/>
+            <rect x="0" y="150" width="300" height="8" fill="#2f3550" opacity=".22"/>
+          </svg>
+          <span class="price"><b>15</b><span>SUBS</span></span>
+        </div>
+
+        <div class="rows">
+          <div class="lrow bad">
+            <span class="mk"><svg class="i"><use href="#i-alert"/></svg></span>
+            <div><b>3JW Construction</b><span>Roofing · suspended</span></div>
+            <span class="chev"><svg class="i"><use href="#i-chev"/></svg></span>
+          </div>
+          <div class="lrow">
+            <span class="mk"><svg class="i"><use href="#i-check"/></svg></span>
+            <div><b>Westdade Air</b><span>HVAC · in good standing</span></div>
+            <span class="chev"><svg class="i"><use href="#i-chev"/></svg></span>
+          </div>
+          <div class="lrow faded">
+            <span class="mk"><svg class="i"><use href="#i-check"/></svg></span>
+            <div><b>2 Bros Plumbing</b><span>Plumbing · in good standing</span></div>
+            <span class="chev"><svg class="i"><use href="#i-chev"/></svg></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
