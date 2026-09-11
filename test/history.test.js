@@ -2,12 +2,17 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises'
 
-const PATH = 'data/history.json'
+/** History is per project, so a case must write where the active project reads. */
+async function pathForActive() {
+  const { activeId } = await import('../src/projects.js')
+  return `data/history/${await activeId()}.json`
+}
 
 /** Run a case against a temporary history, restoring whatever was there. */
 async function withHistory(runs, fn) {
+  const PATH = await pathForActive()
   const saved = await readFile(PATH, 'utf8').catch(() => null)
-  await mkdir('data', { recursive: true })
+  await mkdir('data/history', { recursive: true })
   await writeFile(PATH, JSON.stringify({ runs }))
   try {
     // imported fresh each time so the module reads the file we just wrote

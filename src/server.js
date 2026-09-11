@@ -12,6 +12,7 @@ import { readFile } from 'node:fs/promises'
 import { runSweep } from './sweeper.js'
 import { recordRun, changes, timelineFor, load as loadHistory } from './history.js'
 import { alertOnChange, sendTelegram } from './notify.js'
+import { listProjects, createProject, setActive, deleteProject, activeId, migrateLegacyRoster } from './projects.js'
 import {
   loadRoster,
   saveRoster,
@@ -208,6 +209,27 @@ const routes = {
   'POST /api/brief': (req, res) => brief(res),
 
   'GET /api/roster': async (req, res) => json(res, 200, await loadRoster()),
+
+  /** Every site this contractor runs, and which one is open. */
+  'GET /api/projects': async (req, res) =>
+    json(res, 200, { active: await activeId(), projects: await listProjects() }),
+
+  'POST /api/projects/create': async (req, res) => {
+    const { name } = await body(req)
+    const id = await createProject(String(name ?? '').trim())
+    json(res, 200, { id, active: id })
+  },
+
+  'POST /api/projects/switch': async (req, res) => {
+    const { id } = await body(req)
+    if (current) current.abort() // never leave a sweep running against the project you just left
+    json(res, 200, { active: await setActive(id) })
+  },
+
+  'POST /api/projects/delete': async (req, res) => {
+    const { id } = await body(req)
+    json(res, 200, await deleteProject(id))
+  },
 
   'GET /api/cadences': async (req, res) => json(res, 200, CADENCES),
 

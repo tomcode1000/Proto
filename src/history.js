@@ -12,15 +12,19 @@
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 
-const PATH = 'data/history.json'
+import { activeId } from './projects.js'
+
+const DIR = 'data/history'
+const pathFor = (id) => `${DIR}/${id}.json`
 
 /** Enough runs to show a season of a project without the file becoming a burden. */
 const KEEP = 60
 
 const empty = { runs: [] }
 
-export async function load() {
-  const raw = await readFile(PATH, 'utf8').catch(() => null)
+export async function load(id) {
+  const project = id ?? (await activeId())
+  const raw = await readFile(pathFor(project), 'utf8').catch(() => null)
   if (!raw) return { ...empty }
   try {
     return JSON.parse(raw)

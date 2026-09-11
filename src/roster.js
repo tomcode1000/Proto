@@ -13,10 +13,8 @@
  * Google API: no OAuth, no key, no dependency, and the contractor keeps editing
  * the sheet they already use.
  */
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { lookupLicense } from './connectors/dbpr.js'
-
-const ROSTER_PATH = process.env.PROTO_ROSTER ?? 'data/roster.json'
+import { activeId, readProject, writeProject, blankProject } from './projects.js'
 
 /** Florida licence numbers: two to six letters, then five to seven digits. */
 const LICENCE = /\b([A-Z]{2,6}\d{5,7})\b/i
@@ -89,11 +87,10 @@ export function daysUntilDue(schedule) {
   return due ? Math.ceil((new Date(due) - Date.now()) / 86_400_000) : null
 }
 
+/** The roster is always the active project's roster. */
 export async function loadRoster() {
-  const raw = await readFile(ROSTER_PATH, 'utf8').catch(() => null)
-  const roster = raw
-    ? JSON.parse(raw)
-    : { project: '', generalContractor: '', county: 'MIAMI-DADE', subcontractors: [] }
+  const id = await activeId()
+  const roster = (await readProject(id)) ?? blankProject(id)
 
   roster.schedule ??= {
     cadence: 'weekly',
@@ -113,9 +110,8 @@ export async function loadRoster() {
 }
 
 export async function saveRoster(roster) {
-  await mkdir('data', { recursive: true })
-  await writeFile(ROSTER_PATH, JSON.stringify(roster, null, 2) + '\n')
-  return roster
+  roster.id ??= await activeId()
+  return writeProject(roster)
 }
 
 /**

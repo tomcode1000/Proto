@@ -80,12 +80,30 @@
   .switcher {
     width: 100%; text-align: left; background: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.7);
     border-radius: 10px; padding: 7px 10px; font: 550 12.5px var(--sans); color: var(--ink);
-    display: flex; align-items: center; gap: 7px; cursor: default; flex: none;
+    display: flex; align-items: center; gap: 7px; cursor: pointer; flex: none;
   }
   .switcher > span:not(.ic) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
   .switcher .ic { color: var(--violet); display: grid; place-items: center; }
   .switcher .ic .i { width: 15px; height: 15px; }
   .switcher.unset > span:not(.ic) { color: var(--mute); }
+  .switcher:hover { border-color: rgba(109,74,255,.4); }
+  .swwrap { position: relative; }
+  .swmenu {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30;
+    background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 6px;
+    box-shadow: 0 12px 30px rgba(60,50,140,.16); display: none;
+  }
+  .swmenu.on { display: block; }
+  .swmenu button {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+    background: none; border: 0; border-radius: 8px; padding: 8px 9px; cursor: pointer;
+    font: 500 12.5px var(--sans); color: var(--body);
+  }
+  .swmenu button:hover { background: rgba(109,74,255,.07); color: var(--ink); }
+  .swmenu button.on { color: var(--violet); font-weight: 650; }
+  .swmenu button small { margin-left: auto; font: 10.5px var(--mono); color: var(--mute); }
+  .swmenu .sep { height: 1px; background: var(--line); margin: 5px 2px; }
+  .swmenu .new { color: var(--violet); font-weight: 600; }
   .switcher em { margin-left: auto; color: var(--mute); }
   .switcher em .i { width: 15px; height: 15px; }
 
@@ -456,7 +474,11 @@
       <span class="mark"><b>Proto</b><span>Licence watch</span></span>
     </div>
 
-    <button class="switcher"><span class="ic"><svg class="i"><use href="#i-building"/></svg></span><span id="swProject">Loading</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
+    <div class="swwrap">
+    <button class="switcher" id="swBtn"><span class="ic"><svg class="i"><use href="#i-building"/></svg></span><span id="swProject">Loading</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
+      <div class="swmenu" id="swMenu"></div>
+    </div>
+
     <div class="seekwrap">
       <svg class="i"><use href="#i-search"/></svg>
       <input class="seek" id="seek" type="text" placeholder="Filter by name or licence">
@@ -808,6 +830,38 @@ $$("[data-tab]").forEach((btn) =>
     ["one", "many", "sheet"].forEach((t) => ($("#tab-" + t).style.display = t === btn.dataset.tab ? "" : "none"));
   })
 );
+
+/* ── projects ───────────────────────────────────────── */
+async function loadProjects() {
+  const { active, projects } = await (await fetch("/api/projects")).json();
+  $("#swMenu").innerHTML =
+    projects
+      .map((p) =>
+        "<button data-proj='" + esc(p.id) + "' class='" + (p.id === active ? "on" : "") + "'>" +
+        esc(p.project || "Unnamed project") + "<small>" + p.subcontractors + "</small></button>"
+      )
+      .join("") +
+    "<div class='sep'></div><button class='new' id='swNew'>Start a new project</button>";
+
+  $("[data-proj]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      await api("/api/projects/switch", { id: b.dataset.proj });
+      location.reload();
+    })
+  );
+  $("#swNew").addEventListener("click", async () => {
+    const name = prompt("What is this project called?");
+    if (name === null) return;
+    await api("/api/projects/create", { name: name.trim() });
+    location.reload();
+  });
+}
+
+$("#swBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  $("#swMenu").classList.toggle("on");
+});
+document.addEventListener("click", () => $("#swMenu").classList.remove("on"));
 
 /* ── roster ─────────────────────────────────────────── */
 async function loadRoster() {
@@ -1474,6 +1528,7 @@ const hour = new Date().getHours();
 $("#greeting").textContent = (hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening") + ".";
 running(false);
 loadRoster().then(renderCadences);
+loadProjects();
 loadChanges();
 </script>
 </body>
