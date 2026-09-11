@@ -98,3 +98,20 @@ test('every reason is traceable to a field, never generated prose', () => {
   assert.ok(r.reasons.some((x) => x.includes('Suspended')), 'quotes the registry string verbatim')
   assert.ok(r.reasons.some((x) => x.includes('2026-07-13')), 'cites the real permit date')
 })
+
+test('a county with no permit source is reported as unchecked, not as quiet', () => {
+  const r = scoreExposure({
+    license: active({ status: 'DELINQUENT', statusRaw: 'Delinquent' }),
+    permits: null,
+    today: TODAY,
+  })
+  assert.ok(
+    r.reasons.some((x) => /not available for this county/.test(x)),
+    'says the source was unavailable',
+  )
+  assert.ok(
+    !r.reasons.some((x) => /No permit activity on record/.test(x)),
+    'never claims there was no activity',
+  )
+  assert.equal(r.carryingWork, false)
+})

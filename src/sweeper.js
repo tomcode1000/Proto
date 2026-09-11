@@ -9,15 +9,58 @@ import { lookupLicense } from './connectors/dbpr.js'
 import { getPermitActivity } from './connectors/permits.js'
 import { scoreExposure, rankByExposure } from './engine/exposure.js'
 import { openJournal } from './journal.js'
+import { verifySubcontractor } from './agent/verifier.js'
+
+/**
+ * Gather the facts about one subcontractor.
+ *
+ * The agent leads, because deciding how far to investigate is a judgement: a
+ * licence valid for another two years does not need its permit history pulled,
+ * and a suspended one does. That choice saves real requests against a public
+ * service and is the part worth an agent.
+ *
+ * If the model is unavailable the direct path runs instead. Compliance work
+ * cannot stop because an API is down, so the fallback asks every source about
+ * everyone. It is wasteful and correct, which is the right way round.
+ */
+async function gather(sub, county, { direct = false, sources } = {}) {
+  const readLicence = sources?.lookupLicense ?? lookupLicense
+  const readPermits = sources?.getPermitActivity ?? getPermitActivity
+
+  if (!direct) {
+    try {
+      const out = await verifySubcontractor(sub, { county })
+      // A register failure inside a tool must surface, not be swallowed as "clear".
+      if (!out.license && !out.notFound) throw new Error('agent returned no licence record')
+      return { ...out, mode: 'agent' }
+    } catch (err) {
+      if (/DBPR|register|timeout|fetch failed|HTTP/i.test(err.message)) throw err
+      // Anything else is the model's problem, not the register's.
+    }
+  }
+
+  const license = await readLicence(sub.licenseNumber)
+  const permits = await readPermits(sub.licenseNumber, { county }).catch(() => null)
+
+  return {
+    license,
+    permits,
+    toolsUsed: ['lookup_license', 'get_permit_activity'],
+    rationale: null,
+    mode: 'direct',
+  }
+}
 
 /**
  * @param {object} roster
  * @param {object} [opts]
  * @param {boolean} [opts.fresh]    ignore any existing journal
  * @param {AbortSignal} [opts.signal] abort between subcontractors
+ * @param {boolean} [opts.direct]   skip the agent and read every source
+ * @param {object}  [opts.sources]  connector overrides, for tests
  * @yields {{type:string}} start | skip | checking | verified | aborted | complete
  */
-export async function* runSweep(roster, { fresh = false, signal } = {}) {
+export async function* runSweep(roster, { fresh = false, signal, direct = false, sources } = {}) {
   const journal = await openJournal(roster, { fresh })
   const total = roster.subcontractors.length
 
@@ -50,26 +93,39 @@ export async function* runSweep(roster, { fresh = false, signal } = {}) {
 
     yield { type: 'checking', sub }
 
-    // "The registry holds no such licence" and "the registry did not answer" are
-    // different facts, and only the first is a finding. Collapsing them would
-    // accuse a real business because a public server was slow, so a failure to
-    // reach the registry is carried through as exactly that.
-    let license = null
+    let gathered
     try {
-      license = await lookupLicense(sub.licenseNumber)
+      gathered = await gather(sub, roster.county, { direct, sources })
     } catch (err) {
-      // Deliberately not committed: nothing was established, so the next run
+      // "The register holds no such licence" and "the register did not answer"
+      // are different facts, and only the first is a finding. Collapsing them
+      // would accuse a real business because a public server was slow, so a
+      // failure to reach the register is carried through as exactly that, and
+      // deliberately not committed: nothing was established, so the next run
       // asks again rather than inheriting an answer that never arrived.
       unreachable.push({ ...sub, error: err.message })
       yield { type: 'unreachable', sub, error: err.message, verified: journal.doneCount(), total }
       continue
     }
 
-    const permits = await getPermitActivity(sub.licenseNumber, { county: roster.county }).catch(
-      () => null,
-    )
-    const exposure = scoreExposure({ license, permits, trade: sub.trade })
-    const entry = { ...sub, license, permits, exposure }
+    // Scoring never sees the model. It reads the facts the tools wrote.
+    const exposure = scoreExposure({
+      license: gathered.license,
+      permits: gathered.permits,
+      trade: sub.trade,
+    })
+
+    const entry = {
+      ...sub,
+      license: gathered.license,
+      permits: gathered.permits,
+      exposure,
+      investigation: {
+        mode: gathered.mode,
+        toolsUsed: gathered.toolsUsed,
+        rationale: gathered.rationale,
+      },
+    }
 
     await journal.commit(sub.licenseNumber, entry)
     yield { type: 'verified', entry, verified: journal.doneCount(), total }

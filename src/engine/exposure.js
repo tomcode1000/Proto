@@ -108,6 +108,11 @@ export function scoreExposure({ license, permits, trade, today = new Date() }) {
     }
   } else if (total > 0 && score > 0) {
     reasons.push(`${total} permits in the last three years, none this year${latest ? ` (last ${latest})` : ''}.`)
+  } else if (!permits) {
+    // Silence from a source is not evidence of quiet. Reporting "no permit
+    // activity" when no permit source was read would turn a gap in coverage
+    // into a clean bill of health, which is the wrong direction to be wrong in.
+    reasons.push('Permit records were not available for this county, so open work could not be checked.')
   }
 
   if (reasons.length === 0) {

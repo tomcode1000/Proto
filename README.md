@@ -54,31 +54,47 @@ cannot tell them apart.
 ## Architecture
 
 ```mermaid
-flowchart TD
-    R[roster.json<br/>project subcontractors] --> S[sweep]
+flowchart LR
+    R[roster<br/>the subcontractors] --> V
 
-    subgraph facts [Facts · deterministic, no model]
-        S --> D[DBPR connector<br/>live licence status]
-        S --> P[Permit connector<br/>county permit activity]
-        D --> E[exposure engine<br/>pure functions · unit tested]
-        P --> E
+    subgraph agent [Agent, decides depth]
+        V[verify<br/>how far to dig, per subcontractor]
+        V --> T1[lookup_license]
+        V --> T2[get_permit_activity]
+        V --> T3[check_scope]
     end
 
-    E --> J[(run journal<br/>committed per subcontractor)]
-    J --> F[findings.json<br/>verified record]
+    T1 --> E
+    T2 --> E
+    T3 --> E
 
-    subgraph agents [Judgement · Strands Graph]
-        F --> T[triage agent<br/>call-first ordering]
-        T --> N[notice agent<br/>drafts stop-work notice]
+    subgraph engine [Engine, deterministic, no model]
+        E[exposure scoring<br/>pure functions, 17 tests]
+        E --> J[(journal and history)]
     end
 
-    N --> O[briefing + notice]
+    J --> G
+
+    subgraph graph [Strands graph]
+        G[triage<br/>what to act on first] --> N[notice<br/>drafts the letter]
+    end
+
+    N --> O[briefing and notice]
 ```
 
-**The split is deliberate.** Connectors and the exposure engine establish facts
-deterministically. The agent layer receives findings that are already true and only
-decides ordering and drafts prose. Nothing downstream can alter a status, a date, or
-a permit count.
+**The split is deliberate, and it runs in one direction.** The agent decides which
+sources to consult for a given subcontractor: a licence current for another two years
+needs nothing further, a suspended one needs its permit history, because open work
+under a dead licence is the finding that matters. That judgement saves real requests
+against a public government service.
+
+What the agent may not do is decide what any of it means. The tools write what they
+found into a facts record, the deterministic engine scores that record, and the graph
+at the end only orders the morning and drafts the letter. A model that misreported a
+status could not change what Proto reports, only waste a call.
+
+If the model is unavailable the sweep still runs. It falls back to reading every
+source about everyone, which is wasteful and correct, in that order.
 
 Every reason Proto gives is recomputed from the record in front of it, so an
 explanation cannot drift from its evidence. A language model narrating its own
