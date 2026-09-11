@@ -1,7 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { rm, mkdir, readdir } from 'node:fs/promises'
-import { runSweep } from '../src/sweeper.js'
+// Isolate this run: a server may be up with a watch that writes journals.
+process.env.PROTO_STATE_DIR = '.proto-state-test'
+const STATE = process.env.PROTO_STATE_DIR
+
+const { runSweep } = await import('../src/sweeper.js')
 
 /**
  * These cover the two claims the whole pitch rests on: that a killed run
@@ -53,7 +57,7 @@ const collect = async (gen) => {
 }
 
 test('a killed sweep keeps what it verified and resumes from there', async () => {
-  await rm('.proto-state', { recursive: true, force: true })
+  await rm(STATE, { recursive: true, force: true })
   const book = roster(8)
 
   // Stop after three have been committed, the way a closed laptop would.
@@ -71,8 +75,8 @@ test('a killed sweep keeps what it verified and resumes from there', async () =>
   assert.equal(first.filter((e) => e.type === 'verified').length, 3)
 
   // A journal survives the kill, which is what makes the next run a resume.
-  await mkdir('.proto-state', { recursive: true })
-  assert.ok((await readdir('.proto-state')).some((f) => f.endsWith('.json')), 'journal is on disk')
+  await mkdir(STATE, { recursive: true })
+  assert.ok((await readdir(STATE)).some((f) => f.endsWith('.json')), 'journal is on disk')
 
   // Second run: the first three are skipped, not asked about again.
   const second = await collect(runSweep(book, { direct: true, sources: answers }))
@@ -87,11 +91,11 @@ test('a killed sweep keeps what it verified and resumes from there', async () =>
   assert.equal(complete.total, 8, 'the finished run still reports all eight')
 
   // A completed run clears its own journal, so the next one starts clean.
-  assert.ok(!(await readdir('.proto-state')).length, 'journal is cleared on completion')
+  assert.ok(!(await readdir(STATE)).length, 'journal is cleared on completion')
 })
 
 test('a register that will not answer is never recorded as a missing licence', async () => {
-  await rm('.proto-state', { recursive: true, force: true })
+  await rm(STATE, { recursive: true, force: true })
   const book = roster(3)
 
   const events = await collect(runSweep(book, { fresh: true, direct: true, sources: silent }))

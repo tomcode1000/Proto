@@ -17,7 +17,11 @@ import { readFile, writeFile, mkdir, readdir, unlink } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
 
-const DIR = '.proto-state'
+/**
+ * Where journals live. Overridable so a test run cannot collide with a server
+ * that is up and may fire a scheduled sweep into the same directory.
+ */
+const DIR = process.env.PROTO_STATE_DIR ?? '.proto-state'
 
 /** A run is identified by what it is checking, so the same roster resumes itself. */
 export function runIdFor(roster) {

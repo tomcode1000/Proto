@@ -11,3 +11,4 @@ data/
 
 # demo material, never published
 SCRIPT.txt
+.proto-state-test/
