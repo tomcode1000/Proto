@@ -1,0 +1,23 @@
+{
+  "name": "proto",
+  "version": "0.1.0",
+  "description": "Continuous subcontractor license verification for construction projects.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "smoke": "node --env-file=.env src/smoke.js",
+    "sweep": "node --env-file=.env src/sweep.js",
+    "test": "node --test",
+    "check": "node --env-file=.env src/check.js",
+    "run": "node --env-file=.env src/run.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.22.0",
+    "@strands-agents/sdk": "^1.17.0",
+    "openai": "^6.49.0",
+    "zod": "^4.0.0"
+  }
+}
