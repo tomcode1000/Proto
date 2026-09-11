@@ -225,6 +225,36 @@ const routes = {
   /** What moved since the previous sweep, which is why a schedule is worth having. */
   'GET /api/changes': async (req, res) => json(res, 200, await changes()),
 
+  /**
+   * Look up any licence against the register, roster or not.
+   *
+   * Someone typing a number into the filter is usually asking a question about a
+   * subcontractor they are considering, not one they have already added. Making
+   * them add it first to find out would be the wrong order.
+   */
+  'GET /api/lookup': async (req, res) => {
+    const { searchParams } = new URL(req.url, `http://localhost:${PORT}`)
+    const licence = (searchParams.get('licence') ?? '').trim().toUpperCase()
+    if (!/^[A-Z]{2,6}[0-9]{5,7}$/.test(licence)) {
+      return json(res, 400, { error: `"${licence}" does not look like a Florida licence number.` })
+    }
+    try {
+      const { lookupLicense, isDisqualifying } = await import('./connectors/dbpr.js')
+      const record = await lookupLicense(licence)
+      if (!record) return json(res, 200, { found: false, licenseNumber: licence })
+      const roster = await loadRoster()
+      json(res, 200, {
+        found: true,
+        ...record,
+        disqualifying: isDisqualifying(record.status),
+        onRoster: roster.subcontractors.some((x) => x.licenseNumber === licence),
+      })
+    } catch (err) {
+      // The register not answering is not the same as the licence not existing.
+      json(res, 503, { error: 'The state register did not answer. Try again in a moment.' })
+    }
+  },
+
   /** Recent runs, for the trend the dashboard draws. Real readings, never a shape. */
   'GET /api/runs': async (req, res) => {
     const { runs } = await loadHistory()

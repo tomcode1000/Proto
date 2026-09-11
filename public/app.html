@@ -437,7 +437,7 @@
     <div class="seekwrap">
       <svg class="i"><use href="#i-search"/></svg>
       <input class="seek" id="seek" type="text" placeholder="Filter by name or licence">
-      <span class="seekhint" id="seekHint">Filters the roster and findings. Separate several with commas.</span>
+      <span class="seekhint" id="seekHint">Filters as you type. Press Enter to open the roster, or to look a licence up.</span>
     </div>
 
     <div class="navlabel">Workspace</div>
@@ -1362,13 +1362,89 @@ function applyFilter() {
   const hint = $("#seekHint");
   if (!terms.length) {
     hint.className = "seekhint";
-    hint.textContent = "Filters the roster and findings. Separate several with commas.";
+    hint.textContent = "Filters as you type. Press Enter to open the roster, or to look a licence up.";
+  } else if (shown === 0) {
+    hint.className = "seekhint hit";
+    hint.textContent = LICENCE.test(terms[0]) ? "Not on this roster. Press Enter to check the register." : "No rows match.";
   } else {
     hint.className = "seekhint hit";
-    hint.textContent = shown + " of " + (shown + hidden) + " rows match " + terms.length + (terms.length === 1 ? " term" : " terms");
+    hint.textContent = shown + " of " + (shown + hidden) + " match. Press Enter to open the roster.";
   }
+  return shown;
 }
+const LICENCE = /^[a-z]{2,6}[0-9]{5,7}$/i;
 $("#seek").addEventListener("input", applyFilter);
+
+/**
+ * Enter is the commit.
+ *
+ * Typing narrows what is on screen; Enter decides where to look. If the roster
+ * holds matches it opens the roster with the filter applied, because that is the
+ * page with the full list. If it holds none and the text is a licence number,
+ * Proto asks the register directly: someone typing a number is usually asking
+ * about a subcontractor they are considering, not one they have already added.
+ */
+$("#seek").addEventListener("keydown", async (e) => {
+  if (e.key !== "Enter") return;
+  const term = $("#seek").value.trim();
+  if (!term) return;
+
+  const matched = applyFilter();
+  if (matched > 0) return show("roster");
+  if (!LICENCE.test(term)) return;
+
+  openLookup(term.toUpperCase());
+});
+
+/** Show a licence that is not on the roster, straight from the register. */
+async function openLookup(licence) {
+  $("#scrim").classList.add("on");
+  $("#drawer").classList.add("on");
+  $("#drawer").setAttribute("aria-hidden", "false");
+  $("#dwName").textContent = licence;
+  $("#dwLic").textContent = "Asking the state register";
+  $("#dwFacts").innerHTML = "";
+  $("#dwTl").innerHTML = "<p class='hint'>Checking the register, this takes a few seconds.</p>";
+
+  const r = await (await fetch("/api/lookup?licence=" + encodeURIComponent(licence))).json();
+
+  if (r.error) {
+    $("#dwTl").innerHTML = "<div class='empty'><b>Could not check</b>" + esc(r.error) + "</div>";
+    return;
+  }
+  if (!r.found) {
+    $("#dwLic").textContent = licence;
+    $("#dwTl").innerHTML = "<div class='empty'><b>No such licence</b>The register holds nothing under " +
+      esc(licence) + ". Check the number before relying on it.</div>";
+    return;
+  }
+
+  $("#dwName").textContent = r.businessName || licence;
+  $("#dwLic").textContent = licence + (r.licenseType ? ", " + r.licenseType : "");
+  $("#dwFacts").innerHTML = [
+    ["Status now", esc(r.statusRaw)],
+    ["Expires", esc(r.expirationDate || "not stated")],
+    ["Qualifier", esc(r.qualifierName || "not stated")],
+    ["On your roster", r.onRoster ? "Yes" : "No"],
+  ].map((f) => "<div class='fact'><span>" + f[0] + "</span><b>" + f[1] + "</b></div>").join("");
+
+  $("#dwTl").innerHTML =
+    "<div class='" + (r.disqualifying ? "banner" : "quiet") + "'>" +
+    icn(r.disqualifying ? "alert" : "check") + "<span><b>" +
+    (r.disqualifying ? "Not in good standing." : "In good standing.") + "</b>" +
+    "The register reads " + esc(r.statusRaw) + ", checked just now.</span></div>" +
+    (r.onRoster
+      ? "<p class='hint' style='margin-top:14px'>Already on your roster, so it is included in every sweep.</p>"
+      : "<button class='go' id='dwAdd' style='margin-top:14px'>Add to roster and watch it</button>");
+
+  const add = $("#dwAdd");
+  if (add) add.addEventListener("click", async () => {
+    add.disabled = true; add.textContent = "Adding";
+    const out = await api("/api/roster/add", { licenseNumber: licence });
+    add.textContent = out.error ? out.error : "Added to the roster";
+    await loadRoster();
+  });
+}
 
 /* ── boot ───────────────────────────────────────────── */
 const hour = new Date().getHours();
