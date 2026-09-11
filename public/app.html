@@ -70,8 +70,8 @@
 
   .switcher {
     width: 100%; text-align: left; background: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.7);
-    border-radius: 11px; padding: 9px 12px; font: 500 13px var(--sans); color: var(--ink);
-    display: flex; align-items: center; gap: 8px; cursor: default;
+    border-radius: 10px; padding: 7px 10px; font: 550 12.5px var(--sans); color: var(--ink);
+    display: flex; align-items: center; gap: 7px; cursor: default; flex: none;
   }
   .switcher > span:not(.ic) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
   .switcher .ic { color: var(--violet); display: grid; place-items: center; }
@@ -80,15 +80,23 @@
   .switcher em { margin-left: auto; color: var(--mute); }
   .switcher em .i { width: 15px; height: 15px; }
 
+  .seekwrap {
+    position: relative; margin-top: 7px; flex: none;
+  }
+  .seekwrap .i {
+    position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; color: var(--mute); pointer-events: none;
+  }
   .seek {
-    width: 100%; margin-top: 9px; background: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.7);
-    border-radius: 11px; padding: 9px 12px; font: 13px var(--sans); color: var(--ink);
+    width: 100%; height: 32px; background: rgba(255,255,255,.62);
+    border: 1px solid rgba(255,255,255,.7); border-radius: 10px;
+    padding: 0 10px 0 29px; font: 12.5px var(--sans); color: var(--ink); flex: none;
   }
   .seek::placeholder { color: var(--mute); }
 
   .navlabel {
     font: 600 10.5px var(--mono); letter-spacing: .12em; color: #7b6ea8;
-    text-transform: uppercase; padding: 20px 10px 8px;
+    text-transform: uppercase; padding: 16px 10px 6px;
   }
   .navitem {
     display: flex; align-items: center; gap: 10px; width: 100%;
@@ -230,8 +238,9 @@
   .tabs button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(26,31,46,.1); }
 
   .field { display: flex; gap: 8px; flex-wrap: wrap; }
-  input[type=text], textarea, select {
-    flex: 1; min-width: 150px; background: #fff; border: 1px solid var(--line);
+  .field input[type=text], .field select { flex: 1; min-width: 150px; }
+  .field input[type=text], .field select, textarea, label input, label select {
+    background: #fff; border: 1px solid var(--line);
     border-radius: 10px; padding: 10px 13px; font: 13.5px var(--sans); color: var(--ink);
   }
   textarea { width: 100%; min-height: 108px; resize: vertical; font-family: var(--mono); font-size: 12.5px; }
@@ -339,6 +348,7 @@
   .fact span { font: 10.5px var(--mono); letter-spacing: .09em; color: var(--mute); text-transform: uppercase; }
   .fact b { display: block; font-size: 14px; margin-top: 5px; letter-spacing: -.01em; }
 
+  .link { color: var(--violet); cursor: pointer; border-bottom: 1px solid rgba(108,92,231,.3); }
   .rowlink { cursor: pointer; }
   .rowlink:hover { background: rgba(108,92,231,.035); }
 
@@ -413,7 +423,10 @@
     </div>
 
     <button class="switcher"><span class="ic"><svg class="i"><use href="#i-building"/></svg></span><span id="swProject">Loading</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
-    <input class="seek" id="seek" type="text" placeholder="Search subcontractors">
+    <div class="seekwrap">
+      <svg class="i"><use href="#i-search"/></svg>
+      <input class="seek" id="seek" type="text" placeholder="Search">
+    </div>
 
     <div class="navlabel">Workspace</div>
     <button class="navitem on" data-view="dash"><span class="ic"><svg class="i"><use href="#i-grid"/></svg></span>Dashboard</button>
@@ -622,6 +635,26 @@
           <em>Where permit activity is checked. Licences are statewide.</em>
         </label>
 
+        <h3 style="margin-top:28px">Who is on this project</h3>
+        <p class="caption">
+          Paste the licence numbers you want watched. Proto looks each one up as it imports, so the
+          business name comes from the state register rather than from whoever typed the list.
+        </p>
+
+        <textarea id="setPaste" placeholder="CCC1332414, 3JW Construction, roofing&#10;CAC1816423&#10;CFC1429225, 2 Bros Plumbing, plumbing"></textarea>
+        <div class="field" style="margin-top:9px">
+          <button class="go quiet" id="setPreview" style="flex:none">Preview</button>
+          <button class="go" id="setImport" style="flex:none">Add to roster</button>
+          <span class="hint" id="setRosterCount" style="margin:0;align-self:center"></span>
+        </div>
+
+        <p class="hint">
+          Keeping the list in a Google Sheet instead? Open <b class="link" data-view="roster">Roster</b>
+          to connect one, or to add a single licence and remove people.
+        </p>
+        <div class="said" id="setImportSaid"></div>
+        <div id="setPreviewBox"></div>
+
         <h3 style="margin-top:26px">How often should Proto check?</h3>
         <p class="caption">
           A licence verified once is a snapshot. Verified on a schedule it becomes a watch, which
@@ -737,6 +770,7 @@ async function loadRoster() {
   $("#cRoster").textContent = n;
   $("#kRoster").textContent = n;
   $("#rosterCount").textContent = n + " on file";
+  $("#setRosterCount").textContent = n ? n + " on the roster" : "";
   if (roster.schedule && roster.schedule.cadence) chosen = roster.schedule.cadence;
   if (roster.schedule) {
     $("#setTime").value = roster.schedule.timeOfDay || "08:00";
@@ -831,6 +865,27 @@ async function importRows(payload, btn) {
   $("#previewBox").innerHTML = "";
   loadRoster();
 }
+
+$("#setPreview").addEventListener("click", async () => {
+  const r = await api("/api/roster/preview", { text: $("#setPaste").value });
+  if (r.error) return say("#setImportSaid", r.error, false);
+  say("#setImportSaid", r.count + " licence numbers found in that list.", true);
+  $("#setPreviewBox").innerHTML =
+    "<table><thead><tr><th>Licence</th><th>Name in your list</th><th>Trade</th></tr></thead><tbody>" +
+    r.rows.map((x) => "<tr><td class='lic'>" + esc(x.licenseNumber) + "</td><td>" + esc(x.name || "resolved on import") + "</td><td>" + esc(x.trade || "unset") + "</td></tr>").join("") +
+    "</tbody></table>";
+});
+
+$("#setImport").addEventListener("click", async (e) => {
+  const btn = e.target;
+  btn.disabled = true; btn.textContent = "Adding";
+  const r = await api("/api/roster/import", { text: $("#setPaste").value });
+  btn.disabled = false; btn.textContent = "Add to roster";
+  if (r.error) return say("#setImportSaid", r.error, false);
+  say("#setImportSaid", r.added.length + " added, " + r.skipped.length + " already on the roster, " + r.failed.length + " rejected.", true);
+  $("#setPaste").value = ""; $("#setPreviewBox").innerHTML = "";
+  await loadRoster(); paintWatch();
+});
 
 $("#previewMany").addEventListener("click", () => preview({ text: $("#manyText").value }));
 $("#importMany").addEventListener("click", (e) => importRows({ text: $("#manyText").value }, e.target));
