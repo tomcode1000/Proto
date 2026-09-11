@@ -10,7 +10,7 @@
 import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { runSweep } from './sweeper.js'
-import { recordRun, changes, timelineFor } from './history.js'
+import { recordRun, changes, timelineFor, load as loadHistory } from './history.js'
 import { alertOnChange, sendTelegram } from './notify.js'
 import {
   loadRoster,
@@ -224,6 +224,42 @@ const routes = {
 
   /** What moved since the previous sweep, which is why a schedule is worth having. */
   'GET /api/changes': async (req, res) => json(res, 200, await changes()),
+
+  /** Recent runs, for the trend the dashboard draws. Real readings, never a shape. */
+  'GET /api/runs': async (req, res) => {
+    const { runs } = await loadHistory()
+    json(
+      res,
+      200,
+      runs.slice(-12).map((r) => ({ at: r.at, total: r.total, needsAttention: r.needsAttention })),
+    )
+  },
+
+  /** The evidence, in the format that gets attached to an email. */
+  'GET /api/export.csv': async (req, res) => {
+    const raw = await readFile('out/findings.json', 'utf8').catch(() => null)
+    if (!raw) return json(res, 409, { error: 'Run a sweep first.' })
+
+    const { project, checkedAt, findings } = JSON.parse(raw)
+    const cell = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
+    const rows = [
+      ['Project', 'Checked at', 'Subcontractor', 'Licence', 'Type', 'Trade', 'Registry status', 'Expires', 'Exposure', 'Findings', 'Action', 'Source'],
+      ...findings.map((f) => [
+        project, checkedAt, f.name, f.licenseNumber,
+        f.license?.licenseType ?? '', f.trade ?? '',
+        f.license?.statusRaw ?? 'not found', f.license?.expirationDate ?? '',
+        f.exposure.level, f.exposure.reasons.join(' '), f.exposure.action,
+        f.license?.sourceUrl ?? '',
+      ]),
+    ]
+
+    res.writeHead(200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="proto-findings.csv"',
+    })
+    // Spreadsheets on Windows expect CRLF, which is where this file is opened.
+    res.end(rows.map((r) => r.map(cell).join(',')).join('\r\n'))
+  },
 
   /** One subcontractor's readings over time, collapsed to the moments it moved. */
   'GET /api/timeline': async (req, res) => {
