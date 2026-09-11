@@ -22,6 +22,8 @@
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
     --r: 16px;
   }
+  .i { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.6;
+       stroke-linecap: round; stroke-linejoin: round; flex: none; display: block; }
   * { box-sizing: border-box; }
   body {
     margin: 0; color: var(--ink); font: 14px/1.55 var(--sans);
@@ -57,7 +59,8 @@
     display: flex; align-items: center; gap: 8px; cursor: default;
   }
   .switcher span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .switcher em { margin-left: auto; font-style: normal; color: var(--mute); font-size: 11px; }
+  .switcher em { margin-left: auto; color: var(--mute); }
+  .switcher em .i { width: 15px; height: 15px; }
 
   .seek {
     width: 100%; margin-top: 9px; background: rgba(255,255,255,.7); border: 1px solid var(--line);
@@ -76,7 +79,8 @@
   }
   .navitem:hover { background: rgba(255,255,255,.7); color: var(--ink); }
   .navitem.on { background: var(--violet-soft); color: var(--violet); font-weight: 600; }
-  .navitem .ic { width: 17px; text-align: center; font-size: 13px; }
+  .navitem .ic { display: grid; place-items: center; }
+  .navitem .ic .i { width: 16px; height: 16px; }
   .navitem .count {
     margin-left: auto; font: 600 11px var(--mono); color: var(--mute);
     background: rgba(26,31,46,.06); border-radius: 6px; padding: 2px 7px;
@@ -148,8 +152,9 @@
   .kpi .hd { display: flex; align-items: center; gap: 9px; color: var(--body); font-size: 12.5px; }
   .kpi .hd .ic {
     width: 24px; height: 24px; border-radius: 8px; background: var(--violet-soft);
-    display: grid; place-items: center; font-size: 12px;
+    display: grid; place-items: center; color: var(--violet);
   }
+  .kpi .hd .ic .i { width: 14px; height: 14px; }
   .kpi b { display: block; font-size: 27px; letter-spacing: -.03em; margin: 11px 0 2px; font-weight: 640; }
   .kpi small { color: var(--mute); font-size: 12px; }
   .meter { height: 4px; border-radius: 9px; background: rgba(26,31,46,.07); margin-top: 12px; overflow: hidden; }
@@ -173,8 +178,11 @@
   .ev:last-child { border-bottom: 0; }
   .ev .ic {
     width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
-    font-size: 12px; background: rgba(26,31,46,.05); flex-shrink: 0;
+    background: rgba(26,31,46,.05); flex-shrink: 0; color: var(--body);
   }
+  .ev .ic .i { width: 14px; height: 14px; }
+  .ev .ic.crit { color: var(--critical); }
+  .ev .ic.ok { color: var(--ok); }
   .ev .ic.crit { background: rgba(217,72,79,.1); }
   .ev .ic.ok { background: rgba(47,138,91,.1); }
   .ev b { font-weight: 600; font-size: 13.5px; }
@@ -241,7 +249,9 @@
   td.lic { font: 12px var(--mono); color: var(--body); }
   .chip { font-size: 11.5px; background: var(--violet-soft); color: var(--violet); padding: 3px 9px; border-radius: 999px; }
   .chip.none { background: rgba(26,31,46,.05); color: var(--mute); }
-  .x { border: 0; background: transparent; color: var(--mute); cursor: pointer; font-size: 15px; padding: 2px 6px; }
+  .x { border: 0; background: transparent; color: var(--mute); cursor: pointer; padding: 4px; border-radius: 7px; }
+  .x .i { width: 15px; height: 15px; }
+  .x:hover { background: rgba(217,72,79,.08); }
   .x:hover { color: var(--critical); }
 
   .prose {
@@ -258,17 +268,17 @@
   <aside>
     <div class="brand"><span class="logo">P</span><b>Proto</b></div>
 
-    <button class="switcher"><span id="swProject">Loading…</span><em>▾</em></button>
+    <button class="switcher"><span id="swProject">Loading…</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
     <input class="seek" id="seek" type="text" placeholder="Search subcontractors">
 
     <div class="navlabel">Workspace</div>
-    <button class="navitem on" data-view="dash"><span class="ic">▦</span>Dashboard</button>
-    <button class="navitem" data-view="roster"><span class="ic">☰</span>Roster<span class="count" id="cRoster">0</span></button>
-    <button class="navitem" data-view="findings"><span class="ic">⚠</span>Findings<span class="count alarm" id="cFind">0</span></button>
-    <button class="navitem" data-view="notices"><span class="ic">✉</span>Notices</button>
+    <button class="navitem on" data-view="dash"><span class="ic"><svg class="i"><use href="#i-grid"/></svg></span>Dashboard</button>
+    <button class="navitem" data-view="roster"><span class="ic"><svg class="i"><use href="#i-list"/></svg></span>Roster<span class="count" id="cRoster">0</span></button>
+    <button class="navitem" data-view="findings"><span class="ic"><svg class="i"><use href="#i-alert"/></svg></span>Findings<span class="count alarm" id="cFind">0</span></button>
+    <button class="navitem" data-view="notices"><span class="ic"><svg class="i"><use href="#i-mail"/></svg></span>Notices</button>
 
     <div class="navlabel">Manage</div>
-    <button class="navitem" data-view="settings"><span class="ic">⚙</span>Settings</button>
+    <button class="navitem" data-view="settings"><span class="ic"><svg class="i"><use href="#i-sliders"/></svg></span>Settings</button>
 
     <div class="whoami">
       <span class="av">GC</span>
@@ -309,22 +319,22 @@
     <div class="view on" id="v-dash">
       <div class="kpis">
         <div class="kpi">
-          <div class="hd"><span class="ic">👷</span>Subcontractors</div>
+          <div class="hd"><span class="ic"><svg class="i"><use href="#i-users"/></svg></span>Subcontractors</div>
           <b id="kRoster">0</b><small id="kRosterSub">on this project</small>
           <div class="meter"><i style="width:100%"></i></div>
         </div>
         <div class="kpi">
-          <div class="hd"><span class="ic">⚠️</span>Need action</div>
+          <div class="hd"><span class="ic"><svg class="i"><use href="#i-alert"/></svg></span>Need action</div>
           <b id="kCrit">0</b><small id="kCritSub">not in good standing</small>
           <div class="meter"><i class="bad" id="kCritBar" style="width:0"></i></div>
         </div>
         <div class="kpi">
-          <div class="hd"><span class="ic">✅</span>Clear</div>
+          <div class="hd"><span class="ic"><svg class="i"><use href="#i-check"/></svg></span>Clear</div>
           <b id="kClear">0</b><small id="kClearSub">verified in good standing</small>
           <div class="meter"><i class="good" id="kClearBar" style="width:0"></i></div>
         </div>
         <div class="kpi">
-          <div class="hd"><span class="ic">⏱️</span>Last verified</div>
+          <div class="hd"><span class="ic"><svg class="i"><use href="#i-clock"/></svg></span>Last verified</div>
           <b id="kWhen" style="font-size:19px">Never</b><small id="kWhenSub">run a sweep to begin</small>
           <div class="meter"><i id="kWhenBar" style="width:0"></i></div>
         </div>
@@ -507,7 +517,7 @@ async function loadRoster() {
         .map((s) =>
           "<tr><td>" + esc(s.name) + "</td><td class='lic'>" + esc(s.licenseNumber) + "</td><td>" +
           (s.trade ? "<span class='chip'>" + esc(s.trade) + "</span>" : "<span class='chip none'>unset</span>") +
-          "</td><td style='text-align:right'><button class='x' data-rm='" + esc(s.licenseNumber) + "'>×</button></td></tr>"
+          "</td><td style='text-align:right'><button class='x' data-rm='" + esc(s.licenseNumber) + "'><svg class="i"><use href="#i-x"/></svg></button></td></tr>"
         )
         .join("")
     : "<tr><td colspan='4'><div class='empty'><b>Roster is empty</b>Add a licence number on the left to begin.</div></td></tr>";
@@ -649,16 +659,16 @@ function sweep(fresh) {
         ? "Picking up where the last run stopped. Nothing is checked twice."
         : "Checking each against the Florida DBPR registry and county permit records.";
       $("#track").style.width = (ev.alreadyVerified / ev.total) * 100 + "%";
-      if (ev.resumed) event("↻", "Resumed from the journal", ev.alreadyVerified + " subcontractors were already banked.");
+      if (ev.resumed) event("<svg class=\"i\"><use href=\"#i-rotate\"/></svg>", "Resumed from the journal", ev.alreadyVerified + " subcontractors were already banked.");
     }
 
-    if (ev.type === "skip") event("↷", esc(ev.entry.name), "Already verified in this run — skipped.");
-    if (ev.type === "checking") event("🔎", "Checking " + ev.sub.licenseNumber, "Asking the registry about " + (ev.sub.name || "this licence") + ".");
+    if (ev.type === "skip") event("<svg class=\"i\"><use href=\"#i-skip\"/></svg>", esc(ev.entry.name), "Already verified in this run — skipped.");
+    if (ev.type === "checking") event("<svg class=\"i\"><use href=\"#i-search\"/></svg>", "Checking " + ev.sub.licenseNumber, "Asking the registry about " + (ev.sub.name || "this licence") + ".");
 
     if (ev.type === "verified") {
       const lvl = ev.entry.exposure.level;
       event(
-        lvl === "NONE" ? "✓" : "⚠",
+        lvl === "NONE" ? "<svg class=\"i\"><use href=\"#i-check\"/></svg>" : "<svg class=\"i\"><use href=\"#i-alert\"/></svg>",
         ev.entry.name,
         lvl === "NONE" ? "In good standing." : lvl + " — " + ev.entry.exposure.reasons[0],
         lvl === "NONE" ? "ok" : "crit"
@@ -670,7 +680,7 @@ function sweep(fresh) {
     if (ev.type === "aborted") {
       $("#agentLine").textContent = "Killed at " + ev.verified + " of " + ev.total;
       $("#agentSub").textContent = "Every verified subcontractor is on disk. Run the sweep again and it continues from there.";
-      event("✕", "Run killed", ev.verified + " of " + ev.total + " banked. Nothing will be re-checked.", "crit");
+      event("<svg class=\"i\"><use href=\"#i-x\"/></svg>", "Run killed", ev.verified + " of " + ev.total + " banked. Nothing will be re-checked.", "crit");
       running(false);
       source.close();
     }

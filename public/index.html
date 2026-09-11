@@ -17,6 +17,8 @@
     --critical: #d9484f;
     --ok: #2f8a5b;
   }
+  .i { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6;
+       stroke-linecap: round; stroke-linejoin: round; flex: none; display: block; }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
@@ -63,6 +65,7 @@
     box-shadow: 0 2px 14px rgba(26,32,48,.05);
   }
   .badge b { color: var(--ink); font-weight: 600; }
+  .badge .i { width: 16px; height: 16px; color: var(--violet); }
   h1 {
     font-size: clamp(42px, 6.4vw, 82px); line-height: 1.02; letter-spacing: -.035em;
     font-weight: 600; margin: 30px 0 0;
@@ -78,8 +81,8 @@
   }
   .btn .chip {
     width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center;
-    font-size: 13px;
   }
+  .btn .chip .i { width: 15px; height: 15px; stroke-width: 1.8; }
   .btn.dark { background: #16191f; color: #fff; }
   .btn.dark .chip { background: rgba(255,255,255,.16); }
   .btn.ghost { background: rgba(255,255,255,.66); color: var(--ink); border-color: rgba(26,32,48,.12); }
@@ -89,8 +92,9 @@
   .tile {
     position: absolute; width: 62px; height: 62px; border-radius: 19px;
     background: #fff; display: grid; place-items: center; font-size: 24px;
-    box-shadow: 0 14px 34px rgba(26,32,48,.13); border: 1px solid rgba(255,255,255,.9);
+    box-shadow: 0 14px 34px rgba(26,32,48,.13); border: 1px solid rgba(255,255,255,.9); color: var(--violet);
   }
+  .tile .i { width: 25px; height: 25px; stroke-width: 1.5; }
   .t1 { left: 5%;  top: 268px; transform: rotate(-11deg); }
   .t2 { left: 15%; top: 372px; transform: rotate(7deg); }
   .t3 { right: 5%; top: 268px; transform: rotate(10deg); }
@@ -121,8 +125,9 @@
   }
   .rowcard .ico {
     width: 34px; height: 34px; border-radius: 11px; background: rgba(26,32,48,.05);
-    display: grid; place-items: center; font-size: 15px; flex-shrink: 0;
+    display: grid; place-items: center; flex-shrink: 0; color: var(--ink);
   }
+  .rowcard .ico .i { width: 17px; height: 17px; }
   .rowcard h4 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
   .rowcard p { margin: 2px 0 0; font-size: 13.5px; color: var(--body); }
   .rowcard .go {
@@ -161,6 +166,7 @@
     display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--body);
   }
   .clear b { color: var(--ok); }
+  .clear .i { width: 16px; height: 16px; color: var(--ok); }
 
   .tags { display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; margin-top: 44px; }
   .tag { border-radius: 999px; padding: 12px 24px; font-size: 14px; font-weight: 550; }
@@ -200,20 +206,20 @@
     <a class="pill-cta" href="/app">Open the control room</a>
   </nav>
 
-  <div class="tile t1">🛡️</div>
-  <div class="tile t2">📄</div>
-  <div class="tile t3">⏱️</div>
-  <div class="tile t4">✅</div>
+  <div class="tile t1"><svg class="i"><use href="#i-shield"/></svg></div>
+  <div class="tile t2"><svg class="i"><use href="#i-doc"/></svg></div>
+  <div class="tile t3"><svg class="i"><use href="#i-clock"/></svg></div>
+  <div class="tile t4"><svg class="i"><use href="#i-check"/></svg></div>
 
   <div class="hero">
-    <span class="badge">🏗️ <b>Bayfront Medical Office</b> · 15 subcontractors verified this morning</span>
+    <span class="badge"><svg class="i"><use href="#i-building"/></svg> <b>Bayfront Medical Office</b> · 15 subcontractors verified this morning</span>
 
     <h1>Verified once<br>is not verified<span class="dot">.</span></h1>
     <p class="sub">Every subcontractor. Every day. Against the registry of record.</p>
 
     <div class="actions">
-      <a class="btn dark" href="/app">Open the control room <span class="chip">→</span></a>
-      <a class="btn ghost" href="#how">See how it works <span class="chip">◷</span></a>
+      <a class="btn dark" href="/app">Open the control room <span class="chip"><svg class="i"><use href="#i-arrow"/></svg></span></a>
+      <a class="btn ghost" href="#how">See how it works <span class="chip"><svg class="i"><use href="#i-clock"/></svg></span></a>
     </div>
   </div>
 
@@ -222,7 +228,7 @@
       <div class="step now">
         <div class="stamp">09:04</div>
         <div class="rowcard">
-          <div class="ico">✉️</div>
+          <div class="ico"><svg class="i"><use href="#i-send"/></svg></div>
           <div>
             <h4>Notice ready.</h4>
             <p>Stop-work notice drafted for the suspended roofer.</p>
@@ -235,7 +241,7 @@
       <div class="step">
         <div class="stamp">09:02</div>
         <div class="rowcard">
-          <div class="ico">⚠️</div>
+          <div class="ico"><svg class="i"><use href="#i-alert"/></svg></div>
           <div>
             <h4>Three licences are not in good standing.</h4>
             <p>Ranked by exposure — one is carrying open work.</p>
@@ -247,7 +253,7 @@
       <div class="step">
         <div class="stamp">09:00</div>
         <div class="rowcard">
-          <div class="ico">🔎</div>
+          <div class="ico"><svg class="i"><use href="#i-search"/></svg></div>
           <div>
             <h4>Sweep started.</h4>
             <p>15 subcontractors checked against Florida DBPR and county permits.</p>
@@ -273,7 +279,7 @@
           </ul>
           <div class="act">Stop work and withhold the next draw until reinstated.</div>
         </div>
-        <div class="clear">✓ <span><b>12 clear.</b> Verified against the registry 4 minutes ago.</span></div>
+        <div class="clear" style="color:var(--body)"><svg class="i"><use href="#i-check"/></svg> <span><b>12 clear.</b> Verified against the registry 4 minutes ago.</span></div>
       </div>
     </div>
   </div>

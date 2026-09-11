@@ -22,10 +22,17 @@ const json = (res, code, body) => {
   res.end(JSON.stringify(body))
 }
 
+/**
+ * Pages share one icon sprite, injected at serve time so both surfaces are
+ * guaranteed to be drawing from the same set rather than drifting apart.
+ */
 const page = async (res, file) => {
-  const html = await readFile(`public/${file}`, 'utf8')
+  const [html, icons] = await Promise.all([
+    readFile(`public/${file}`, 'utf8'),
+    readFile('public/icons.html', 'utf8'),
+  ])
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-  res.end(html)
+  res.end(html.replace('<body>', `<body>\n${icons}`))
 }
 
 async function body(req) {
