@@ -3,253 +3,345 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Proto · Control Room</title>
+<title>Proto — the licence you checked in January</title>
 <style>
   :root {
-    --bg: #0c0e11; --panel: #14171c; --line: #232830;
-    --ink: #e6e9ee; --mute: #7d8795; --dim: #525b68;
-    --critical: #ff5d5d; --high: #ff9340; --medium: #e8c05a; --ok: #4a9e6b;
-    --accent: #5b9dff;
+    --ink: #1a2030;
+    --body: #5c6577;
+    --mute: #8b93a3;
+    --violet: #6c5ce7;
+    --line: rgba(26,32,48,.09);
+    --glass: rgba(255,255,255,.55);
+    --sans: "Inter", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
-    --sans: ui-sans-serif, -apple-system, "Segoe UI", Inter, sans-serif;
+    --critical: #d9484f;
+    --ok: #2f8a5b;
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 14px/1.55 var(--sans); -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
-
-  header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
-  .brand { display: flex; align-items: baseline; gap: 12px; }
-  h1 { font-size: 17px; margin: 0; letter-spacing: -.01em; }
-  .tag { font: 11px/1 var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: .09em; }
-  .project { margin-top: 10px; font-size: 20px; letter-spacing: -.02em; }
-  .meta { margin-top: 4px; font: 12px/1.5 var(--mono); color: var(--mute); }
-
-  .controls { display: flex; gap: 8px; margin: 20px 0 8px; flex-wrap: wrap; align-items: center; }
-  button {
-    font: 12px/1 var(--sans); font-weight: 550; color: var(--ink);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 7px;
-    padding: 9px 15px; cursor: pointer; transition: .12s;
-  }
-  button:hover:not(:disabled) { border-color: var(--dim); background: #191d23; }
-  button:disabled { opacity: .32; cursor: not-allowed; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #08101f; }
-  button.danger { border-color: #52262a; color: var(--critical); }
-  button.danger:hover:not(:disabled) { background: #1d1214; border-color: var(--critical); }
-
-  .bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; margin: 14px 0 6px; }
-  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
-  .status { font: 12px/1.5 var(--mono); color: var(--mute); min-height: 18px; }
-  .status .flash { color: var(--high); }
-
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-
-  section h2 {
-    font: 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .1em;
-    color: var(--dim); margin: 0 0 12px; font-weight: 500;
+    margin: 0; color: var(--ink); font: 16px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(900px 520px at 50% -6%, #ffffff 0%, rgba(255,255,255,0) 62%),
+      linear-gradient(168deg, #eae9f4 0%, #e6e6f2 46%, #e2e4ef 100%);
+    min-height: 100vh;
   }
 
-  .feed { font: 12px/1.9 var(--mono); max-height: 340px; overflow-y: auto;
-          border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; background: var(--panel); }
-  .feed div { display: flex; gap: 10px; }
-  .feed .lic { color: var(--mute); min-width: 106px; }
-  .feed .res { font-weight: 600; }
-
-  .card {
-    border: 1px solid var(--line); border-left-width: 3px; border-radius: 9px;
-    background: var(--panel); padding: 14px 16px; margin-bottom: 10px;
+  .shell {
+    max-width: 1240px; margin: 22px auto; padding: 26px 34px 80px;
+    border: 1px solid rgba(255,255,255,.8); border-radius: 34px;
+    background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.08));
+    position: relative; overflow: hidden;
   }
-  .card.CRITICAL { border-left-color: var(--critical); }
-  .card.HIGH { border-left-color: var(--high); }
-  .card.MEDIUM { border-left-color: var(--medium); }
-  .card.LOW, .card.NONE { border-left-color: var(--line); }
-  .card h3 { margin: 0; font-size: 14px; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-  .lvl { font: 10px/1 var(--mono); letter-spacing: .1em; padding: 4px 7px; border-radius: 4px; background: #1d222a; }
-  .CRITICAL .lvl { color: var(--critical); } .HIGH .lvl { color: var(--high); }
-  .MEDIUM .lvl { color: var(--medium); } .LOW .lvl, .NONE .lvl { color: var(--ok); }
-  .sub { font: 11px/1.6 var(--mono); color: var(--mute); margin-top: 3px; }
-  ul { margin: 9px 0 0; padding-left: 16px; }
-  li { margin: 3px 0; color: #cfd5de; }
-  .act { margin-top: 9px; font-size: 12px; color: var(--high); }
-  .NONE .act, .LOW .act { color: var(--ok); }
+  /* the faint construction grid behind the hero */
+  .shell::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(to right, var(--line) 1px, transparent 1px) 0 0/ 172px 100%,
+      linear-gradient(to bottom, var(--line) 1px, transparent 1px) 0 0/ 100% 172px;
+    mask-image: radial-gradient(760px 440px at 50% 24%, #000 0%, transparent 78%);
+    opacity: .55;
+  }
+  .shell > * { position: relative; }
 
-  .prose { border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
-           padding: 16px 18px; white-space: pre-wrap; font-size: 13px; color: #cfd5de; }
-  .empty { color: var(--dim); font: 12px/1.6 var(--mono); }
+  nav { display: flex; align-items: center; gap: 30px; }
+  .mark { font-weight: 700; letter-spacing: .18em; font-size: 15px; }
+  nav a.link { color: var(--body); text-decoration: none; font-size: 14.5px; font-weight: 500; }
+  nav a.link:hover { color: var(--ink); }
+  nav .spacer { margin-left: auto; }
+  .pill-cta {
+    background: var(--violet); color: #fff; border: 0; border-radius: 999px;
+    padding: 10px 22px; font: 600 14px var(--sans); cursor: pointer; text-decoration: none;
+  }
+
+  .hero { text-align: center; padding: 86px 0 0; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.9);
+    border-radius: 999px; padding: 9px 18px; font-size: 13.5px; color: var(--body);
+    box-shadow: 0 2px 14px rgba(26,32,48,.05);
+  }
+  .badge b { color: var(--ink); font-weight: 600; }
+  h1 {
+    font-size: clamp(42px, 6.4vw, 82px); line-height: 1.02; letter-spacing: -.035em;
+    font-weight: 600; margin: 30px 0 0;
+  }
+  h1 .dot { color: var(--violet); }
+  .sub { font-size: clamp(17px, 2vw, 23px); color: var(--body); margin: 18px 0 0; letter-spacing: -.012em; }
+
+  .actions { display: flex; gap: 12px; justify-content: center; margin-top: 38px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 12px; text-decoration: none;
+    border-radius: 999px; padding: 13px 15px 13px 26px; font: 600 15px var(--sans);
+    border: 1px solid transparent; cursor: pointer;
+  }
+  .btn .chip {
+    width: 28px; height: 28px; border-radius: 999px; display: grid; place-items: center;
+    font-size: 13px;
+  }
+  .btn.dark { background: #16191f; color: #fff; }
+  .btn.dark .chip { background: rgba(255,255,255,.16); }
+  .btn.ghost { background: rgba(255,255,255,.66); color: var(--ink); border-color: rgba(26,32,48,.12); }
+  .btn.ghost .chip { background: rgba(26,32,48,.07); }
+
+  /* floating icon tiles */
+  .tile {
+    position: absolute; width: 62px; height: 62px; border-radius: 19px;
+    background: #fff; display: grid; place-items: center; font-size: 24px;
+    box-shadow: 0 14px 34px rgba(26,32,48,.13); border: 1px solid rgba(255,255,255,.9);
+  }
+  .t1 { left: 5%;  top: 268px; transform: rotate(-11deg); }
+  .t2 { left: 15%; top: 372px; transform: rotate(7deg); }
+  .t3 { right: 5%; top: 268px; transform: rotate(10deg); }
+  .t4 { right: 15%; top: 372px; transform: rotate(-8deg); }
+  @media (max-width: 1080px) { .tile { display: none; } }
+
+  /* hero showcase */
+  .showcase {
+    margin-top: 62px; display: grid; grid-template-columns: 1.35fr .9fr; gap: 26px;
+    background: var(--glass); border: 1px solid rgba(255,255,255,.85);
+    border-radius: 28px; padding: 30px; backdrop-filter: blur(14px);
+    box-shadow: 0 26px 60px rgba(26,32,48,.07);
+  }
+  @media (max-width: 900px) { .showcase { grid-template-columns: 1fr; } }
+
+  .step { display: grid; grid-template-columns: 62px 1fr; gap: 16px; align-items: start; }
+  .stamp {
+    font: 600 12px var(--mono); color: var(--body); background: #fff;
+    border-radius: 999px; padding: 9px 0; text-align: center;
+    box-shadow: 0 2px 10px rgba(26,32,48,.08);
+  }
+  .step.now .stamp { background: var(--violet); color: #fff; }
+  .rail { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 9px 0; }
+  .rail i { width: 3px; height: 3px; border-radius: 99px; background: rgba(26,32,48,.22); }
+  .rowcard {
+    background: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.9);
+    border-radius: 15px; padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  }
+  .rowcard .ico {
+    width: 34px; height: 34px; border-radius: 11px; background: rgba(26,32,48,.05);
+    display: grid; place-items: center; font-size: 15px; flex-shrink: 0;
+  }
+  .rowcard h4 { margin: 0; font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+  .rowcard p { margin: 2px 0 0; font-size: 13.5px; color: var(--body); }
+  .rowcard .go {
+    margin-left: auto; border: 1px solid rgba(26,32,48,.13); background: #fff;
+    border-radius: 999px; padding: 7px 15px; font: 600 12.5px var(--sans); cursor: pointer;
+  }
+
+  /* the finding panel, standing in for a device */
+  .device {
+    background: #14171c; border-radius: 24px; padding: 11px;
+    box-shadow: 0 20px 44px rgba(20,23,28,.3);
+  }
+  .screen { background: #fff; border-radius: 17px; overflow: hidden; }
+  .screen header {
+    display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+    border-bottom: 1px solid rgba(26,32,48,.07);
+  }
+  .screen header .t { font-weight: 650; font-size: 14.5px; letter-spacing: -.01em; }
+  .screen header .who { margin-left: auto; font: 11px var(--mono); color: var(--mute); }
+  .finding { padding: 16px; }
+  .lvl {
+    display: inline-block; font: 600 10px var(--mono); letter-spacing: .12em;
+    color: var(--critical); background: rgba(217,72,79,.09);
+    padding: 5px 9px; border-radius: 6px;
+  }
+  .finding h3 { margin: 11px 0 2px; font-size: 15.5px; letter-spacing: -.015em; }
+  .finding .lic { font: 11.5px var(--mono); color: var(--mute); }
+  .finding ul { margin: 13px 0 0; padding-left: 16px; font-size: 13px; color: var(--body); }
+  .finding li { margin: 5px 0; }
+  .finding .act {
+    margin-top: 13px; padding-top: 12px; border-top: 1px solid rgba(26,32,48,.07);
+    font-size: 12.5px; color: var(--critical); font-weight: 550;
+  }
+  .clear {
+    padding: 13px 16px; border-top: 1px solid rgba(26,32,48,.07);
+    display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--body);
+  }
+  .clear b { color: var(--ok); }
+
+  .tags { display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; margin-top: 44px; }
+  .tag { border-radius: 999px; padding: 12px 24px; font-size: 14px; font-weight: 550; }
+  .tag.b { background: #dbe3ff; color: #3a4fa8; }
+  .tag.p { background: #e9dcfa; color: #6a3fa0; }
+  .tag.r { background: #fbdbe5; color: #a83a63; }
+  .tag.o { background: #fde2cd; color: #a25a25; }
+
+  section.band { max-width: 1000px; margin: 108px auto 0; padding: 0 12px; }
+  section.band h2 {
+    font-size: clamp(28px, 3.4vw, 40px); letter-spacing: -.03em; font-weight: 600;
+    margin: 0 0 16px; text-align: center;
+  }
+  section.band p.lede { text-align: center; color: var(--body); font-size: 17.5px; margin: 0 auto; max-width: 660px; }
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 42px; }
+  @media (max-width: 820px) { .three { grid-template-columns: 1fr; } }
+  .cell {
+    background: rgba(255,255,255,.58); border: 1px solid rgba(255,255,255,.85);
+    border-radius: 20px; padding: 24px;
+  }
+  .cell .n { font: 600 11px var(--mono); color: var(--violet); letter-spacing: .12em; }
+  .cell h3 { margin: 12px 0 7px; font-size: 17px; letter-spacing: -.018em; }
+  .cell p { margin: 0; color: var(--body); font-size: 14.5px; }
+
+  footer { text-align: center; padding: 76px 20px 30px; color: var(--mute); font-size: 13.5px; }
+  footer a { color: var(--body); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand">
-      <h1>Proto</h1>
-      <span class="tag">Control Room</span>
+<div class="shell">
+  <nav>
+    <span class="mark">PROTO</span>
+    <a class="link" href="#how">How it works</a>
+    <a class="link" href="#why">Why it matters</a>
+    <a class="link" href="https://github.com/tomcode1000/Proto">Source</a>
+    <span class="spacer"></span>
+    <a class="pill-cta" href="/app">Open the control room</a>
+  </nav>
+
+  <div class="tile t1">🛡️</div>
+  <div class="tile t2">📄</div>
+  <div class="tile t3">⏱️</div>
+  <div class="tile t4">✅</div>
+
+  <div class="hero">
+    <span class="badge">🏗️ <b>Bayfront Medical Office</b> · 15 subcontractors verified this morning</span>
+
+    <h1>Verified once<br>is not verified<span class="dot">.</span></h1>
+    <p class="sub">Every subcontractor. Every day. Against the registry of record.</p>
+
+    <div class="actions">
+      <a class="btn dark" href="/app">Open the control room <span class="chip">→</span></a>
+      <a class="btn ghost" href="#how">See how it works <span class="chip">◷</span></a>
     </div>
-    <div class="project" id="project">—</div>
-    <div class="meta" id="meta">idle</div>
-  </header>
-
-  <div class="controls">
-    <button class="primary" id="start">Run sweep</button>
-    <button class="danger" id="kill" disabled>Kill mid-sweep</button>
-    <button id="fresh">Start fresh</button>
-    <button id="briefBtn" disabled>Brief the site manager</button>
-  </div>
-  <div class="bar"><i id="bar"></i></div>
-  <div class="status" id="status">Ready. A sweep verifies every subcontractor against the live state registry.</div>
-
-  <div class="grid">
-    <section>
-      <h2>Live verification</h2>
-      <div class="feed" id="feed"><span class="empty">no run yet</span></div>
-    </section>
-    <section>
-      <h2>Findings, ranked by exposure</h2>
-      <div id="findings"><span class="empty">a ranked roster appears when the sweep completes</span></div>
-    </section>
   </div>
 
-  <section style="margin-top:26px">
-    <h2>Triage &amp; notice</h2>
-    <div id="brief"><span class="empty">run a sweep, then brief the site manager</span></div>
+  <div class="showcase">
+    <div>
+      <div class="step now">
+        <div class="stamp">09:04</div>
+        <div class="rowcard">
+          <div class="ico">✉️</div>
+          <div>
+            <h4>Notice ready.</h4>
+            <p>Stop-work notice drafted for the suspended roofer.</p>
+          </div>
+          <button class="go">Send</button>
+        </div>
+      </div>
+      <div class="rail"><i></i><i></i><i></i><i></i></div>
+
+      <div class="step">
+        <div class="stamp">09:02</div>
+        <div class="rowcard">
+          <div class="ico">⚠️</div>
+          <div>
+            <h4>Three licences are not in good standing.</h4>
+            <p>Ranked by exposure — one is carrying open work.</p>
+          </div>
+        </div>
+      </div>
+      <div class="rail"><i></i><i></i><i></i><i></i></div>
+
+      <div class="step">
+        <div class="stamp">09:00</div>
+        <div class="rowcard">
+          <div class="ico">🔎</div>
+          <div>
+            <h4>Sweep started.</h4>
+            <p>15 subcontractors checked against Florida DBPR and county permits.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="device">
+      <div class="screen">
+        <header>
+          <span class="t">Findings</span>
+          <span class="who">ranked by exposure</span>
+        </header>
+        <div class="finding">
+          <span class="lvl">CRITICAL</span>
+          <h3>3JW Construction, Inc.</h3>
+          <div class="lic">CCC1332414 · Certified Roofing Contractor</div>
+          <ul>
+            <li>Registry reads “Suspended, Active”.</li>
+            <li>A permit was pulled under this licence on 26 Feb 2026.</li>
+            <li>Work is in progress on a licence that cannot lawfully support it.</li>
+          </ul>
+          <div class="act">Stop work and withhold the next draw until reinstated.</div>
+        </div>
+        <div class="clear">✓ <span><b>12 clear.</b> Verified against the registry 4 minutes ago.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tags">
+    <span class="tag b">Live state registry</span>
+    <span class="tag p">Deterministic scoring</span>
+    <span class="tag r">Resumable sweeps</span>
+    <span class="tag o">Evidence on every claim</span>
+  </div>
+
+  <section class="band" id="why">
+    <h2>A licence can die in month seven.</h2>
+    <p class="lede">
+      Most contractors verify a subcontractor once, at onboarding, then file the certificate.
+      Nobody is told when the state changes that status — so the work continues, the draws
+      continue, and the exposure sits with the general contractor.
+    </p>
+    <div class="three">
+      <div class="cell">
+        <div class="n">01</div>
+        <h3>Contracts stop working</h3>
+        <p>An agreement with an unlicensed contractor can be void and unenforceable — and the lien goes with it.</p>
+      </div>
+      <div class="cell">
+        <div class="n">02</div>
+        <h3>Cover can lapse</h3>
+        <p>Most general liability policies exclude work performed in violation of licensing law.</p>
+      </div>
+      <div class="cell">
+        <div class="n">03</div>
+        <h3>The citation is yours</h3>
+        <p>Under OSHA's multi-employer policy the GC is the controlling employer on the site.</p>
+      </div>
+    </div>
   </section>
+
+  <section class="band" id="how">
+    <h2>Facts first. Judgement second.</h2>
+    <p class="lede">
+      Connectors and a unit-tested scoring engine establish what is true. The agent layer is
+      handed findings that are already verified, and only decides what to do first and what to
+      write. Nothing downstream can change a status, a date, or a permit count.
+    </p>
+    <div class="three">
+      <div class="cell">
+        <div class="n">REGISTRY</div>
+        <h3>Read the record</h3>
+        <p>Live Florida DBPR status and county permit activity, queried per subcontractor — never cached into a stale copy.</p>
+      </div>
+      <div class="cell">
+        <div class="n">ENGINE</div>
+        <h3>Rank real danger</h3>
+        <p>A dead licence carrying open work outranks a dormant one expiring next week. Every reason is recomputed from the record.</p>
+      </div>
+      <div class="cell">
+        <div class="n">AGENTS</div>
+        <h3>Say what to do</h3>
+        <p>A Strands graph orders the morning and drafts the notice. It cannot invent a number that isn't in the findings.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Licence status and permit activity are public records published by the Florida Department of
+    Business and Professional Regulation and county permit services.<br>
+    Built with <a href="https://strandsagents.com">Strands Agents</a> · <a href="https://github.com/tomcode1000/Proto">Source on GitHub</a>
+  </footer>
 </div>
-
-<script>
-const $ = (id) => document.getElementById(id);
-let source = null;
-
-const setRunning = (on) => {
-  $("start").disabled = on;
-  $("fresh").disabled = on;
-  $("kill").disabled = !on;
-};
-
-const colour = (l) =>
-  ({ CRITICAL: "var(--critical)", HIGH: "var(--high)", MEDIUM: "var(--medium)" }[l] || "var(--ok)");
-
-const esc = (s) =>
-  String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
-
-function row(lic, text, col, pending) {
-  const d = document.createElement("div");
-  d.dataset.lic = lic;
-  d.dataset.pending = pending ? "1" : "";
-  d.innerHTML =
-    '<span class="lic">' + lic + '</span><span class="res" style="color:' + col + '">' + text + "</span>";
-  $("feed").appendChild(d);
-  $("feed").scrollTop = $("feed").scrollHeight;
-}
-
-function replaceLast(lic, text, col) {
-  const d = Array.from($("feed").children).reverse().find((x) => x.dataset.lic === lic && x.dataset.pending);
-  if (!d) return row(lic, text, col);
-  d.dataset.pending = "";
-  d.querySelector(".res").textContent = text;
-  d.querySelector(".res").style.color = col;
-}
-
-function render(findings) {
-  $("findings").innerHTML = findings
-    .map((f) => {
-      const type = f.license && f.license.licenseType ? f.license.licenseType : "unverified";
-      const reasons = f.exposure.reasons.map((r) => "<li>" + esc(r) + "</li>").join("");
-      const action =
-        f.exposure.level === "NONE" ? "" : '<div class="act">' + esc(f.exposure.action) + "</div>";
-      return (
-        '<div class="card ' + f.exposure.level + '">' +
-        "<h3><span>" + esc(f.name) + '</span><span class="lvl">' + f.exposure.level + "</span></h3>" +
-        '<div class="sub">' + f.licenseNumber + " · " + esc(type) + "</div>" +
-        "<ul>" + reasons + "</ul>" + action +
-        "</div>"
-      );
-    })
-    .join("");
-}
-
-function sweep(fresh) {
-  $("feed").innerHTML = "";
-  $("findings").innerHTML = '<span class="empty">verifying…</span>';
-  setRunning(true);
-  if (source) source.close();
-  source = new EventSource("/api/sweep" + (fresh ? "?fresh=1" : ""));
-
-  source.onmessage = (e) => {
-    const ev = JSON.parse(e.data);
-
-    if (ev.type === "start") {
-      $("project").textContent = ev.project;
-      $("meta").textContent =
-        ev.generalContractor + " · " + ev.total + " subcontractors · " + ev.county + " · run " + ev.runId;
-      $("status").innerHTML = ev.resumed
-        ? '<span class="flash">Resuming — ' + ev.alreadyVerified + " of " + ev.total +
-          " already verified. Picking up from there.</span>"
-        : "Verifying " + ev.total + " subcontractors against the live registry…";
-      $("bar").style.width = (ev.alreadyVerified / ev.total) * 100 + "%";
-    }
-
-    if (ev.type === "skip") row(ev.entry.licenseNumber, "already verified", "var(--dim)");
-    if (ev.type === "checking") row(ev.sub.licenseNumber, "checking…", "var(--dim)", true);
-
-    if (ev.type === "verified") {
-      replaceLast(ev.entry.licenseNumber, ev.entry.exposure.level, colour(ev.entry.exposure.level));
-      $("bar").style.width = (ev.verified / ev.total) * 100 + "%";
-    }
-
-    if (ev.type === "aborted") {
-      $("status").innerHTML =
-        '<span class="flash">Killed at ' + ev.verified + " of " + ev.total +
-        ". The journal holds every verified subcontractor — run the sweep again and it continues from there.</span>";
-      setRunning(false);
-      source.close();
-    }
-
-    if (ev.type === "complete") {
-      $("status").textContent = ev.needsAttention + " of " + ev.total + " need attention.";
-      $("bar").style.width = "100%";
-      render(ev.findings);
-      $("briefBtn").disabled = false;
-      setRunning(false);
-      source.close();
-    }
-
-    if (ev.type === "error") {
-      $("status").textContent = "Error: " + ev.message;
-      setRunning(false);
-      source.close();
-    }
-  };
-
-  source.onerror = () => {
-    setRunning(false);
-    source.close();
-  };
-}
-
-$("start").onclick = () => sweep(false);
-$("fresh").onclick = () => sweep(true);
-
-$("kill").onclick = async () => {
-  await fetch("/api/kill", { method: "POST" });
-  if (source) source.close();
-  setRunning(false);
-};
-
-$("briefBtn").onclick = async () => {
-  $("brief").innerHTML = '<span class="empty">thinking…</span>';
-  $("briefBtn").disabled = true;
-  const r = await fetch("/api/brief", { method: "POST" });
-  const d = await r.json();
-  $("brief").innerHTML = d.error
-    ? '<span class="empty">' + esc(d.error) + "</span>"
-    : Object.keys(d)
-        .map((k) => '<h2 style="margin-top:18px">' + k + '</h2><div class="prose">' + esc(d[k]) + "</div>")
-        .join("");
-  $("briefBtn").disabled = false;
-};
-</script>
 </body>
 </html>

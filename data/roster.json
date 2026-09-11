@@ -77,6 +77,12 @@
       "name": "2 BROS PLUMBING, LLC",
       "licenseNumber": "CFC1429225",
       "trade": "plumbing"
+    },
+    {
+      "name": "JEND PLUMBING CONTRACTORS INC",
+      "licenseNumber": "CFC1429771",
+      "trade": "plumbing",
+      "resolved": true
     }
   ]
 }

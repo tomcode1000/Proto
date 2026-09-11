@@ -109,6 +109,18 @@ $ npm run sweep
   4 of 16 need attention.
 ```
 
+## Adding subcontractors
+
+The people this is built for keep their roster in a spreadsheet, an email, or their
+head — never in a JSON file. So there are three ways in, and all three resolve the
+business name from the registry rather than trusting what was typed:
+
+- **One at a time** — paste a licence number; Proto names it and catches a typo immediately
+- **Paste a list** — a column straight out of a spreadsheet; any line containing a
+  licence number works, headers are ignored
+- **Google Sheet** — paste the link. Proto reads the published CSV, so there is no
+  OAuth, no API key, and the contractor keeps editing the sheet they already use
+
 ## Control room
 
 ```bash
