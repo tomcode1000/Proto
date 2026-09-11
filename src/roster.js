@@ -36,15 +36,43 @@ export function inferTrade(...hints) {
   return null
 }
 
+/**
+ * How often the roster is re-checked.
+ *
+ * This is the product in one field. A licence verified once is a snapshot; a
+ * licence verified every week is a watch. The cadence lives with the roster so
+ * it survives a restart and travels with the project.
+ */
+export const CADENCES = {
+  daily: { label: 'Every day', days: 1, blurb: 'For a site with draws going out weekly.' },
+  weekly: { label: 'Every week', days: 7, blurb: 'The usual choice. Catches a lapse within days.' },
+  fortnightly: { label: 'Every two weeks', days: 14, blurb: 'For steady projects with few subcontractors.' },
+  monthly: { label: 'Every month', days: 30, blurb: 'The least worth doing. A lapse can sit for weeks.' },
+  off: { label: 'Only when I ask', days: null, blurb: 'No automatic checks. You run them yourself.' },
+}
+
+export function nextDueFrom(schedule) {
+  const days = CADENCES[schedule?.cadence]?.days
+  if (!days) return null
+  const from = schedule.lastRun ? new Date(schedule.lastRun) : new Date()
+  return new Date(from.getTime() + days * 86_400_000).toISOString()
+}
+
+/** Whole days until the next check. Negative means it is overdue. */
+export function daysUntilDue(schedule) {
+  const due = schedule?.nextDue ?? nextDueFrom(schedule)
+  return due ? Math.ceil((new Date(due) - Date.now()) / 86_400_000) : null
+}
+
 export async function loadRoster() {
   const raw = await readFile(ROSTER_PATH, 'utf8').catch(() => null)
-  if (raw) return JSON.parse(raw)
-  return {
-    project: 'Untitled project',
-    generalContractor: '',
-    county: 'MIAMI-DADE',
-    subcontractors: [],
-  }
+  const roster = raw
+    ? JSON.parse(raw)
+    : { project: '', generalContractor: '', county: 'MIAMI-DADE', subcontractors: [] }
+
+  roster.schedule ??= { cadence: 'weekly', lastRun: null, nextDue: null }
+  roster.schedule.nextDue ??= nextDueFrom(roster.schedule)
+  return roster
 }
 
 export async function saveRoster(roster) {

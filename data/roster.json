@@ -84,5 +84,10 @@
       "trade": "plumbing",
       "resolved": true
     }
-  ]
+  ],
+  "schedule": {
+    "cadence": "weekly",
+    "lastRun": null,
+    "nextDue": "2026-09-18T15:14:08.684Z"
+  }
 }

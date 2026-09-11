@@ -261,6 +261,51 @@
     background: rgba(26,31,46,.025); border: 1px solid var(--line);
     border-radius: 12px; padding: 15px 17px; margin-top: 10px;
   }
+  /* setup */
+  .stepbar {
+    display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+    padding: 13px 15px; background: rgba(108,92,231,.05);
+    border: 1px solid rgba(108,92,231,.12); border-radius: 13px; margin-bottom: 22px;
+  }
+  .stepbar b { font-size: 12.5px; font-weight: 550; color: var(--body); }
+  .stepbar i { flex: 1; height: 1px; background: rgba(26,31,46,.1); min-width: 14px; }
+  .stepn {
+    width: 21px; height: 21px; border-radius: 999px; display: grid; place-items: center;
+    font: 600 11px var(--mono); background: #fff; color: var(--mute);
+    border: 1px solid var(--line); flex: none;
+  }
+  .stepn.done { background: var(--violet); color: #fff; border-color: var(--violet); }
+
+  .setrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .setrow { grid-template-columns: 1fr; } }
+  label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink); margin-bottom: 14px; }
+  label input, label select { width: 100%; margin-top: 6px; font-weight: 400; }
+  label em { display: block; font-style: normal; font-weight: 400; color: var(--mute); font-size: 11.8px; margin-top: 5px; }
+
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 10px; }
+  .opt {
+    text-align: left; background: #fff; border: 1.5px solid var(--line); border-radius: 13px;
+    padding: 13px 14px; cursor: pointer; transition: .12s; font: inherit; color: inherit;
+  }
+  .opt:hover { border-color: rgba(108,92,231,.4); }
+  .opt.on { border-color: var(--violet); background: rgba(108,92,231,.04); }
+  .opt .tick {
+    width: 15px; height: 15px; border-radius: 999px; border: 1.5px solid var(--line);
+    display: grid; place-items: center; float: right;
+  }
+  .opt.on .tick { border-color: var(--violet); background: var(--violet); }
+  .opt.on .tick::after { content: ""; width: 5px; height: 5px; border-radius: 999px; background: #fff; }
+  .opt b { display: block; font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
+  .opt span { display: block; font-size: 11.8px; color: var(--mute); margin-top: 4px; line-height: 1.45; }
+
+  .watchnote {
+    margin-top: 16px; padding: 13px 15px; border-radius: 12px; font-size: 13px;
+    background: rgba(47,138,91,.07); color: #226b47; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .watchnote.due { background: rgba(217,122,43,.09); color: #96551c; }
+  .watchnote.off { background: rgba(26,31,46,.045); color: var(--body); }
+  .watchnote .i { width: 16px; height: 16px; margin-top: 1px; }
+
   .view { display: none; }
   .view.on { display: block; }
 </style>
@@ -444,21 +489,48 @@
 
     <!-- ── settings ── -->
     <div class="view" id="v-settings">
-      <div class="panel" style="max-width:560px">
-        <h3>Project</h3>
-        <p class="caption">What this roster belongs to</p>
-        <div class="field" style="flex-direction:column">
-          <input type="text" id="setProject" placeholder="Project name">
-          <input type="text" id="setGC" placeholder="General contractor">
+      <div class="panel" style="max-width:720px">
+        <h3>Project setup</h3>
+        <p class="caption">Three things: what the project is, where it is, and how often Proto should look.</p>
+
+        <div class="stepbar">
+          <span class="stepn" id="st1">1</span><b>Name the project</b><i></i>
+          <span class="stepn" id="st2">2</span><b>Add subcontractors</b><i></i>
+          <span class="stepn" id="st3">3</span><b>Set the watch</b>
+        </div>
+
+        <div class="setrow">
+          <label>Project name
+            <input type="text" id="setProject" placeholder="e.g. Bayfront Medical Office — Phase 2">
+            <em>Appears on every notice you send.</em>
+          </label>
+          <label>General contractor
+            <input type="text" id="setGC" placeholder="e.g. Gulf Coast Construction Group">
+            <em>The party carrying the exposure.</em>
+          </label>
+        </div>
+
+        <label style="display:block;max-width:330px">County
           <select id="setCounty">
             <option>MIAMI-DADE</option><option>BROWARD</option><option>PALM BEACH</option>
           </select>
-          <button class="go" id="saveProject" style="align-self:flex-start">Save</button>
-        </div>
+          <em>Where permit activity is checked. Licences are statewide.</em>
+        </label>
+
+        <h3 style="margin-top:26px">How often should Proto check?</h3>
+        <p class="caption">
+          A licence verified once is a snapshot. Verified on a schedule it becomes a watch, which
+          is the whole point — Proto re-checks on its own and speaks up only when something changed.
+        </p>
+        <div class="opts" id="cadenceOpts"></div>
+        <div class="watchnote" id="watchNote"></div>
+
+        <button class="go" id="saveProject" style="margin-top:18px">Save project</button>
         <div class="said" id="setSaid"></div>
-        <p class="hint" style="margin-top:18px">
-          Registry: Florida DBPR. Permits: county ArcGIS services. Both are public records.
-          Adding a county is one entry in the permit source table.
+
+        <p class="hint" style="margin-top:22px">
+          Licences come from the Florida DBPR register; permit activity from county ArcGIS
+          services. Both are public records, so there is nothing to connect and no key to manage.
         </p>
       </div>
     </div>
@@ -505,9 +577,22 @@ async function loadRoster() {
   $("#cRoster").textContent = n;
   $("#kRoster").textContent = n;
   $("#rosterCount").textContent = n + " on file";
+  if (roster.schedule && roster.schedule.cadence) chosen = roster.schedule.cadence;
+
+  const due = roster.schedule && roster.schedule.nextDue ? new Date(roster.schedule.nextDue) : null;
+  const days = due ? Math.ceil((due - Date.now()) / 86400000) : null;
+  const watching =
+    chosen === "off"
+      ? "Automatic checks are off."
+      : days === null
+        ? ""
+        : days <= 0
+          ? "A check is due now."
+          : "Next check in " + days + (days === 1 ? " day." : " days.");
+
   $("#subgreeting").textContent = n
-    ? "Proto is watching " + n + " subcontractors on " + (roster.project || "this project") + "."
-    : "No subcontractors yet — add your first from the Roster tab.";
+    ? "Proto is watching " + n + " subcontractors on " + (roster.project || "this project") + ". " + watching
+    : "No subcontractors yet — open Roster to add your first, or Settings to set up the project.";
 
   $("#rosterBody").innerHTML = n
     ? roster.subcontractors
@@ -581,14 +666,78 @@ $("#importMany").addEventListener("click", (e) => importRows({ text: $("#manyTex
 $("#previewSheet").addEventListener("click", () => preview({ sheetUrl: $("#sheetUrl").value }));
 $("#importSheet").addEventListener("click", (e) => importRows({ sheetUrl: $("#sheetUrl").value }, e.target));
 
+/* ── the watch ──────────────────────────────────────── */
+let CADENCES = {};
+let chosen = "weekly";
+
+async function renderCadences() {
+  CADENCES = await (await fetch("/api/cadences")).json();
+  $("#cadenceOpts").innerHTML = Object.keys(CADENCES)
+    .map((key) => {
+      const c = CADENCES[key];
+      return (
+        "<button class='opt" + (key === chosen ? " on" : "") + "' data-cad='" + key + "'>" +
+        "<span class='tick'></span><b>" + esc(c.label) + "</b><span>" + esc(c.blurb) + "</span></button>"
+      );
+    })
+    .join("");
+
+  $$("[data-cad]").forEach((b) =>
+    b.addEventListener("click", () => {
+      chosen = b.dataset.cad;
+      $$("[data-cad]").forEach((o) => o.classList.toggle("on", o === b));
+      paintWatch();
+    })
+  );
+  paintWatch();
+}
+
+/** Say plainly when the next check lands — a schedule nobody can see is not one. */
+function paintWatch() {
+  const note = $("#watchNote");
+  const due = roster.schedule && roster.schedule.nextDue ? new Date(roster.schedule.nextDue) : null;
+  const days = due ? Math.ceil((due - Date.now()) / 86400000) : null;
+  const saved = roster.schedule ? roster.schedule.cadence : "weekly";
+  const icon = (id) => "<svg class='i'><use href='#i-" + id + "'/></svg>";
+
+  $("#st1").classList.toggle("done", Boolean(roster.project));
+  $("#st2").classList.toggle("done", roster.subcontractors.length > 0);
+  $("#st3").classList.toggle("done", saved !== "off");
+
+  if (chosen === "off") {
+    note.className = "watchnote off";
+    note.innerHTML = icon("clock") + "<span>No automatic checks. You will only see what a sweep you run yourself finds.</span>";
+    return;
+  }
+  if (chosen !== saved) {
+    note.className = "watchnote due";
+    note.innerHTML = icon("alert") + "<span>Not saved yet — press <b>Save project</b> to move the watch to " +
+      esc(CADENCES[chosen].label.toLowerCase()) + ".</span>";
+    return;
+  }
+  note.className = "watchnote" + (days !== null && days <= 0 ? " due" : "");
+  note.innerHTML =
+    icon(days !== null && days <= 0 ? "alert" : "check") +
+    "<span>" +
+    (days === null
+      ? "Watching " + esc(CADENCES[saved].label.toLowerCase()) + ". The first check runs shortly."
+      : days <= 0
+        ? "A check is due now. Proto will run it within a few minutes, or press Run sweep."
+        : "Watching " + esc(CADENCES[saved].label.toLowerCase()) + ". Next check in " + days +
+          (days === 1 ? " day" : " days") + ", on " + due.toLocaleDateString() + ".") +
+    "</span>";
+}
+
 $("#saveProject").addEventListener("click", async () => {
   await api("/api/roster/project", {
     project: $("#setProject").value,
     generalContractor: $("#setGC").value,
     county: $("#setCounty").value,
+    cadence: chosen,
   });
-  say("#setSaid", "Saved.", true);
-  loadRoster();
+  say("#setSaid", "Saved. " + (chosen === "off" ? "Automatic checks are off." : "Proto will check " + CADENCES[chosen].label.toLowerCase() + "."), true);
+  await loadRoster();
+  paintWatch();
 });
 
 /* ── sweep ──────────────────────────────────────────── */
@@ -732,7 +881,7 @@ $("#seek").addEventListener("input", (e) => {
 const hour = new Date().getHours();
 $("#greeting").textContent = (hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening") + ".";
 running(false);
-loadRoster();
+loadRoster().then(renderCadences);
 </script>
 </body>
 </html>

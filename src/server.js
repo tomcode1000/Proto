@@ -10,7 +10,17 @@
 import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { runSweep } from './sweeper.js'
-import { loadRoster, saveRoster, addOne, addMany, removeOne, parseLines, fromSheet } from './roster.js'
+import {
+  loadRoster,
+  saveRoster,
+  addOne,
+  addMany,
+  removeOne,
+  parseLines,
+  fromSheet,
+  nextDueFrom,
+  CADENCES,
+} from './roster.js'
 
 const PORT = Number(process.env.PORT ?? 8787)
 
@@ -46,6 +56,52 @@ async function body(req) {
   }
 }
 
+/** Stamp the watch after a sweep actually finishes. */
+async function markChecked() {
+  const roster = await loadRoster()
+  roster.schedule = { ...roster.schedule, lastRun: new Date().toISOString() }
+  roster.schedule.nextDue = nextDueFrom(roster.schedule)
+  await saveRoster(roster)
+}
+
+/**
+ * The watch.
+ *
+ * A cadence nobody acts on is a preference, not a product, so the server checks
+ * every few minutes whether the roster is due and runs it if so. The sweep is
+ * consumed to completion here rather than streamed: there may be no browser open,
+ * which is the entire point of scheduling it.
+ */
+function startWatch() {
+  const TICK = 5 * 60_000
+
+  setInterval(async () => {
+    if (current) return // a run is already in flight
+
+    const roster = await loadRoster().catch(() => null)
+    if (!roster?.subcontractors.length) return
+    if (!roster.schedule?.nextDue) return
+    if (new Date(roster.schedule.nextDue) > new Date()) return
+
+    console.log(`  scheduled check due — sweeping ${roster.subcontractors.length} subcontractors`)
+    const controller = new AbortController()
+    current = controller
+
+    try {
+      for await (const event of runSweep(roster, { signal: controller.signal })) {
+        if (event.type === 'complete') {
+          await markChecked()
+          console.log(`  scheduled check complete — ${event.needsAttention} need attention`)
+        }
+      }
+    } catch (err) {
+      console.error('  scheduled check failed:', err.message)
+    } finally {
+      current = null
+    }
+  }, TICK).unref()
+}
+
 async function streamSweep(req, res) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -72,6 +128,9 @@ async function streamSweep(req, res) {
       fresh: url.searchParams.get('fresh') === '1',
       signal: controller.signal,
     })) {
+      // A finished sweep is what re-dates the watch. An abandoned one must not,
+      // or a run that died at three of thirty would look like a clean bill.
+      if (event.type === 'complete') await markChecked()
       res.write(`data: ${JSON.stringify(event)}\n\n`)
     }
   } catch (err) {
@@ -133,11 +192,19 @@ const routes = {
 
   'GET /api/roster': async (req, res) => json(res, 200, await loadRoster()),
 
+  'GET /api/cadences': async (req, res) => json(res, 200, CADENCES),
+
   'POST /api/roster/project': async (req, res) => {
     const patch = await body(req)
     const roster = await loadRoster()
     for (const key of ['project', 'generalContractor', 'county']) {
       if (patch[key] != null) roster[key] = patch[key]
+    }
+    if (patch.cadence != null) {
+      // Changing the cadence re-dates the next check from now, so a person who
+      // switches from monthly to weekly is not left waiting out the old month.
+      roster.schedule = { ...roster.schedule, cadence: patch.cadence }
+      roster.schedule.nextDue = nextDueFrom(roster.schedule)
     }
     json(res, 200, await saveRoster(roster))
   },
@@ -187,6 +254,10 @@ createServer(async (req, res) => {
   } catch (err) {
     json(res, 500, { error: err.message })
   }
-}).listen(PORT, () => {
-  console.log(`\n  Proto  →  http://localhost:${PORT}\n`)
+}).listen(PORT, async () => {
+  console.log(`\n  Proto  →  http://localhost:${PORT}`)
+  const { schedule } = await loadRoster().catch(() => ({ schedule: null }))
+  const cadence = CADENCES[schedule?.cadence]
+  console.log(`  Watch: ${cadence ? cadence.label.toLowerCase() : 'not set'}\n`)
+  startWatch()
 })
