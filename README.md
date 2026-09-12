@@ -208,6 +208,22 @@ allegation about any firm's conduct.
 This project incorporates pre-existing Florida DBPR licence and county permit
 connector modules authored by me, adapted for this application.
 
+## The static pages
+
+```bash
+npm run build     # -> site/
+```
+
+The landing page, the deck and the icon sheet are static and can be served from
+anywhere. The build bakes in the icon sprite the server normally injects at
+request time. `vercel.json` is set up for this, so a Vercel deploy needs no
+configuration beyond pointing it at the repository.
+
+The control room is deliberately not part of that build. It needs a process that
+stays alive for the watch, a writable disk for the record, and minutes rather
+than seconds for a sweep. A serverless function provides none of the three, so
+run it locally, or on a host that keeps a process.
+
 ## Running it somewhere else
 
 `npm start` serves on `PORT`, or 8787 if unset, and reads configuration from the
