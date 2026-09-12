@@ -1,0 +1,28 @@
+# Render blueprint.
+#
+# Proto needs a process that stays alive, because the watch is a timer inside it
+# rather than an external scheduler. A web service gives that; a static site or a
+# serverless function does not.
+#
+# Note what the free instance costs you: it sleeps after about fifteen minutes of
+# inactivity, and a sleeping process fires no scheduled checks. It wakes on the
+# next request, so the control room works fine for a demonstration, but the watch
+# is only really a watch on a paid instance or a host that stays up.
+services:
+  - type: web
+    name: proto
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: PROTO_MODEL_PROVIDER
+        value: openrouter
+      - key: PROTO_MODEL_ID
+        value: minimax/minimax-m2.5
+      - key: PROTO_MAX_TOKENS
+        value: 2048
+      # set this in the dashboard, never in the file
+      - key: OPENROUTER_API_KEY
+        sync: false
