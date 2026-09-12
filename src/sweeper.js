@@ -112,6 +112,10 @@ export async function* runSweep(roster, { fresh = false, signal, direct = false,
     const exposure = scoreExposure({
       license: gathered.license,
       permits: gathered.permits,
+      // The agent skips the permit source when nothing it returns could change
+      // the outcome. That is not the same as the source being unavailable, and
+      // saying so would put a false line on a perfectly clean subcontractor.
+      permitsChecked: gathered.toolsUsed.includes('get_permit_activity'),
       trade: sub.trade,
     })
 

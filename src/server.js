@@ -372,6 +372,20 @@ const routes = {
     }
   },
 
+
+  /**
+   * The last completed check, so the dashboard is not blank on arrival.
+   *
+   * A sweep writes its result to disk, and the interface used to render it only
+   * from the live stream. A reload therefore showed zeros while a perfectly good
+   * report sat in the file. The analysis belongs to the project, not to whichever
+   * browser tab happened to be open when it ran.
+   */
+  'GET /api/findings': async (req, res) => {
+    const raw = await readFile('out/findings.json', 'utf8').catch(() => null)
+    if (!raw) return json(res, 200, { findings: [], checkedAt: null })
+    json(res, 200, JSON.parse(raw))
+  },
   /** Recent runs, for the trend the dashboard draws. Real readings, never a shape. */
   'GET /api/runs': async (req, res) => {
     const { runs } = await loadHistory()

@@ -30,12 +30,15 @@ export function daysUntil(dateStr, today = new Date()) {
  *
  * @param {object} input
  * @param {object|null} input.license  record from the DBPR connector, or null if not found
- * @param {object|null} input.permits  record from the permit connector, or null if unchecked
+ * @param {object|null} input.permits  record from the permit connector, or null
+ * @param {boolean} [input.permitsChecked] whether the permit source was actually
+ *   asked. A null because nobody asked and a null because the source would not
+ *   answer are different facts, and only the second is worth reporting.
  * @param {string} [input.trade]       trade this sub is engaged for, if known
  * @param {Date}   [input.today]
  * @returns {{level:string, score:number, reasons:string[], action:string, carryingWork:boolean}}
  */
-export function scoreExposure({ license, permits, trade, today = new Date() }) {
+export function scoreExposure({ license, permits, permitsChecked = true, trade, today = new Date() }) {
   const reasons = []
 
   if (!license) {
@@ -108,10 +111,10 @@ export function scoreExposure({ license, permits, trade, today = new Date() }) {
     }
   } else if (total > 0 && score > 0) {
     reasons.push(`${total} permits in the last three years, none this year${latest ? ` (last ${latest})` : ''}.`)
-  } else if (!permits) {
+  } else if (!permits && permitsChecked) {
     // Silence from a source is not evidence of quiet. Reporting "no permit
-    // activity" when no permit source was read would turn a gap in coverage
-    // into a clean bill of health, which is the wrong direction to be wrong in.
+    // activity" when the source refused would turn a gap in coverage into a
+    // clean bill of health, which is the wrong direction to be wrong in.
     reasons.push('Permit records were not available for this county, so open work could not be checked.')
   }
 

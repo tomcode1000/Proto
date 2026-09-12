@@ -115,3 +115,23 @@ test('a county with no permit source is reported as unchecked, not as quiet', ()
   )
   assert.equal(r.carryingWork, false)
 })
+
+test('a permit source nobody asked is not reported as unavailable', () => {
+  const notAsked = scoreExposure({
+    license: active(),
+    permits: null,
+    permitsChecked: false,
+    today: TODAY,
+  })
+  assert.ok(
+    !notAsked.reasons.some((x) => /not available for this county/.test(x)),
+    'says nothing about a source that was never consulted',
+  )
+  assert.equal(notAsked.level, 'NONE')
+
+  const asked = scoreExposure({ license: active(), permits: null, permitsChecked: true, today: TODAY })
+  assert.ok(
+    asked.reasons.some((x) => /not available for this county/.test(x)),
+    'still reports a source that was asked and would not answer',
+  )
+})

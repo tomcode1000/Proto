@@ -1317,6 +1317,30 @@ function paint(list) {
     : "<div class='empty'><b>Everything is clear</b>All " + list.length + " licences are in good standing.</div>";
 }
 
+/**
+ * Draw the last completed check.
+ *
+ * The report belongs to the project, not to the tab that happened to be open
+ * when the sweep ran, so it is read from the server on arrival.
+ */
+async function loadFindings() {
+  const last = await (await fetch("/api/findings")).json();
+  if (!last.findings || !last.findings.length) return;
+
+  paint(last.findings);
+
+  if (last.checkedAt) {
+    const when = new Date(last.checkedAt);
+    const bad = last.findings.filter((f) => f.exposure.level !== "NONE").length;
+    $("#kWhen").textContent = when.toLocaleDateString([], { day: "numeric", month: "short" });
+    $("#kWhenSub").textContent = "at " + when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    $("#agentLine").textContent = bad ? bad + " need action" : "Everything is clear";
+    $("#agentSub").textContent =
+      last.findings.length + " subcontractors verified against the register on " + when.toLocaleString() + ".";
+    $("#track").style.width = "100%";
+  }
+}
+
 /* ── the metric cards ───────────────────────────────── */
 const BANDS = [
   ["CRITICAL", "var(--critical)"],
@@ -1702,6 +1726,7 @@ const hour = new Date().getHours();
 $("#greeting").textContent = (hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening") + ".";
 running(false);
 loadRoster().then(renderCadences);
+loadFindings();
 loadProjects();
 loadChanges();
 </script>
