@@ -13,7 +13,8 @@ services:
     name: proto
     runtime: node
     plan: free
-    buildCommand: npm install
+    # ci installs exactly what the lockfile pins, rather than re-resolving it
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /
     envVars:
