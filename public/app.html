@@ -1543,7 +1543,8 @@ function sweep(fresh) {
 
     if (ev.type === "unreachable")
       event(icon("alert"), ev.sub.name || ev.sub.licenseNumber,
-        "The registry did not answer. Not recorded, so the next run asks again.", "warn");
+        "The register did not answer: " + (ev.error || "no reason given") +
+          ". Not recorded, so the next run asks again.", "warn");
 
     if (ev.type === "skip") event("<svg class=\"i\"><use href=\"#i-skip\"/></svg>", esc(ev.entry.name), "Already verified in this run, skipped.");
     if (ev.type === "checking") event("<svg class=\"i\"><use href=\"#i-search\"/></svg>", "Checking " + ev.sub.licenseNumber, "Asking the registry about " + (ev.sub.name || "this licence") + ".");
