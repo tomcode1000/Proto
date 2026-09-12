@@ -129,6 +129,16 @@ export async function* runSweep(roster, { fresh = false, signal, direct = false,
 
     await journal.commit(sub.licenseNumber, entry)
     yield { type: 'verified', entry, verified: journal.doneCount(), total }
+
+    // A kill that arrived while this subcontractor was in flight has to be
+    // honoured here too. Checking only at the top of the loop meant a kill
+    // during the last one let the run reach complete, clear its journal, and
+    // look as though nothing had been stopped at all. The finished entry is
+    // kept, because it was established, and the run stops.
+    if (signal?.aborted) {
+      yield { type: 'aborted', verified: journal.doneCount(), total }
+      return
+    }
   }
 
   const scored = roster.subcontractors.map((s) => journal.get(s.licenseNumber)).filter(Boolean)

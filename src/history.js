@@ -70,8 +70,8 @@ export async function recordRun(project, findings) {
   history.runs.push(run)
   history.runs = history.runs.slice(-KEEP)
 
-  await mkdir('data', { recursive: true })
-  await writeFile(PATH, JSON.stringify(history, null, 2) + '\n')
+  await mkdir(DIR, { recursive: true })
+  await writeFile(pathFor(await activeId()), JSON.stringify(history, null, 2) + '\n')
   return run
 }
 

@@ -8,7 +8,7 @@
  * Zero dependencies: Node's own http module.
  */
 import { createServer } from 'node:http'
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { runSweep } from './sweeper.js'
 import { recordRun, changes, timelineFor, load as loadHistory } from './history.js'
 import { alertOnChange, sendTelegram } from './notify.js'
@@ -59,6 +59,21 @@ async function body(req) {
   }
 }
 
+/**
+ * Keep the last completed run where the briefing and the export can read it.
+ *
+ * History stores enough to compare runs, not enough to write a notice: it holds
+ * statuses, not the reasons behind them. This is the full finding, and only a
+ * completed sweep produces one.
+ */
+async function saveFindings(project, findings) {
+  await mkdir('out', { recursive: true })
+  await writeFile(
+    'out/findings.json',
+    JSON.stringify({ project, checkedAt: new Date().toISOString(), findings }, null, 2),
+  )
+}
+
 /** Stamp the watch after a sweep actually finishes. */
 async function markChecked() {
   const roster = await loadRoster()
@@ -93,6 +108,7 @@ function startWatch() {
     try {
       for await (const event of runSweep(roster, { signal: controller.signal })) {
         if (event.type === 'complete') {
+          await saveFindings(roster.project, event.findings)
           await recordRun(roster.project, event.findings)
           await markChecked()
           const alert = await alertOnChange(await loadRoster(), await changes()).catch((err) => ({
@@ -143,6 +159,7 @@ async function streamSweep(req, res) {
       // abandoned one must do neither, or a run that died at three of thirty
       // would pass for a clean bill of health.
       if (event.type === 'complete') {
+        await saveFindings(roster.project, event.findings)
         await recordRun(roster.project, event.findings)
         await markChecked()
         await alertOnChange(await loadRoster(), await changes()).catch((err) =>

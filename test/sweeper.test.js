@@ -109,3 +109,27 @@ test('a register that will not answer is never recorded as a missing licence', a
   assert.equal(complete.unreachable.length, 3, 'the run says which it could not reach')
   assert.equal(complete.total, 0, 'nothing unestablished is counted as checked')
 })
+
+test('a kill during the last subcontractor stops the run, it does not complete', async () => {
+  await rm(STATE, { recursive: true, force: true })
+  const book = roster(2)
+
+  // Abort while the final subcontractor is in flight, which is what pressing
+  // Kill near the end of a short roster actually does.
+  const controller = new AbortController()
+  const events = []
+  let seen = 0
+  for await (const e of runSweep(book, { fresh: true, direct: true, sources: answers, signal: controller.signal })) {
+    events.push(e)
+    if (e.type === 'checking' && ++seen === 2) controller.abort()
+  }
+
+  const types = events.map((e) => e.type)
+  assert.ok(types.includes('aborted'), 'the run reports that it was killed')
+  assert.ok(!types.includes('complete'), 'a killed run never reports completion')
+
+  // The journal survives, which is what makes the next run a resume.
+  assert.ok((await readdir(STATE)).some((f) => f.endsWith('.json')), 'journal is kept')
+
+  await rm(STATE, { recursive: true, force: true })
+})

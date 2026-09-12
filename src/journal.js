@@ -13,9 +13,11 @@
  * from the first unsettled name. The record on disk is the source of truth
  * about progress, never a counter held in memory.
  */
-import { readFile, writeFile, mkdir, readdir, unlink } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, readdir, unlink, rename, rm } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { join } from 'node:path'
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 /**
  * Where journals live. Overridable so a test run cannot collide with a server
@@ -60,10 +62,31 @@ export async function openJournal(roster, { fresh = false } = {}) {
   const flush = async () => {
     // Write to a temporary file and rename: a kill during the write leaves the
     // previous good journal intact rather than a truncated one.
+    //
+    // On Windows that rename can fail with EPERM or EBUSY while something else
+    // holds the file open for a moment, which a synced folder, a backup agent
+    // or a virus scanner all do routinely. It is transient and it clears in
+    // milliseconds, so it is retried rather than allowed to end a sweep. If it
+    // still will not go through, the journal is written in place: losing
+    // atomicity is a far smaller failure than losing the run.
     const tmp = `${path}.tmp`
-    await writeFile(tmp, JSON.stringify(state, null, 2))
-    const { rename } = await import('node:fs/promises')
-    await rename(tmp, path)
+    const body = JSON.stringify(state, null, 2)
+
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      try {
+        await writeFile(tmp, body)
+        await rename(tmp, path)
+        return
+      } catch (err) {
+        if (!['EPERM', 'EBUSY', 'EACCES'].includes(err.code) || attempt === 5) {
+          if (attempt < 5) throw err
+          await writeFile(path, body)
+          await rm(tmp, { force: true })
+          return
+        }
+        await sleep(attempt * 40)
+      }
+    }
   }
 
   return {

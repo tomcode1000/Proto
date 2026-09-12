@@ -142,3 +142,48 @@ test('a timeline keeps only the readings where something moved', async () => {
     },
   )
 })
+
+test('recordRun writes a readable run, and a second one becomes a comparison', async () => {
+  await withHistory([], async (h) => {
+    const finding = (over = {}) => ({
+      name: 'ACME ROOFING LLC',
+      licenseNumber: 'CCC1',
+      trade: 'roofing',
+      license: {
+        status: 'ACTIVE',
+        statusRaw: 'Current, Active',
+        licenseType: 'Certified Roofing Contractor',
+        expirationDate: '08/31/2028',
+      },
+      permits: { totalPermits: 3, mostRecentPermit: '2026-02-26' },
+      exposure: { level: 'NONE', score: 0, reasons: [], action: 'None.' },
+      ...over,
+    })
+
+    // One run: a baseline, and it must come back off disk.
+    const first = await h.recordRun('Test project', [finding()])
+    assert.equal(first.total, 1)
+    assert.equal(first.needsAttention, 0)
+    assert.equal((await h.load()).runs.length, 1, 'the run is on disk')
+    assert.equal((await h.changes()).reason, 'first-run')
+
+    // Two runs: a real comparison, and the licence going bad is the finding.
+    await h.recordRun('Test project', [
+      finding({
+        license: { status: 'SUSPENDED', statusRaw: 'Suspended, Active', licenseType: 'Certified Roofing Contractor', expirationDate: '08/31/2028' },
+        exposure: { level: 'CRITICAL', score: 100, reasons: [], action: 'Stop work.' },
+      }),
+    ])
+
+    const c = await h.changes()
+    assert.equal(c.ready, true)
+    assert.equal(c.appeared.length, 1, 'the licence that went bad is reported')
+    assert.equal(c.appeared[0].was, 'ACTIVE')
+    assert.equal(c.appeared[0].status, 'SUSPENDED')
+
+    // And the same two runs give the subcontractor a timeline.
+    const t = await h.timelineFor('CCC1')
+    assert.equal(t.readings, 2)
+    assert.equal(t.points.length, 2, 'both readings are moments of change')
+  })
+})
