@@ -1,10 +1,3 @@
-
-// A project just created, or one never named, opens on setup with the cursor
-// already in the field that has to be filled in first.
-if (location.hash === "#setup") {
-  show("settings");
-  setTimeout(() => { const f = $("#setProject"); if (f && f.focus) f.focus(); }, 60);
-}
 <!doctype html>
 <html lang="en">
 <head>
@@ -1573,6 +1566,13 @@ function sweep(fresh) {
       $("#agentSub").textContent = "Every verified subcontractor is on disk. Run the sweep again and it continues from there.";
       event("<svg class=\"i\"><use href=\"#i-x\"/></svg>", "Run killed", ev.verified + " of " + ev.total + " banked. Nothing will be re-checked.", "crit");
       running(false);
+
+// A project just created, or one never named, opens on setup with the cursor
+// already in the field that has to be filled in first.
+if (location.hash === "#setup") {
+  show("settings");
+  setTimeout(() => { const f = $("#setProject"); if (f && f.focus) f.focus(); }, 60);
+}
       source.close();
     }
 
