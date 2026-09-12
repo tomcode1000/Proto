@@ -1,85 +1,70 @@
 /**
- * Roster sweep: verify every subcontractor on a project against the live
- * registry, score the exposure, and rank by what is actually dangerous.
+ * Headless sweep.
  *
- * The sweep is resumable. Each subcontractor is committed to the run journal
- * the moment it is verified, so a run that dies at nine of sixteen resumes at
- * ten, not at one.
+ * The same run the control room performs, without a browser: useful for a cron
+ * entry, a deploy hook, or checking a roster over SSH. It consumes the one
+ * sweeper the server uses rather than repeating its logic, because a second
+ * copy of that loop drifts and then quietly disagrees with the first.
  *
  * Usage:
- *   node --env-file=.env src/sweep.js [roster.json] [--fresh]
- *
- * To demonstrate recovery, set PROTO_CRASH_AFTER=<n> to kill the process after
- * n subcontractors, then run it again with no flag.
+ *   node src/sweep.js            verify the active project
+ *   node src/sweep.js --fresh    ignore any half finished run and start over
+ *   node src/sweep.js --direct   skip the agent, read every source for everyone
  */
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
-import { lookupLicense } from './connectors/dbpr.js'
-import { getPermitActivity } from './connectors/permits.js'
-import { scoreExposure, rankByExposure } from './engine/exposure.js'
-import { openJournal } from './journal.js'
+import { writeFile, mkdir } from 'node:fs/promises'
+import { loadRoster } from './roster.js'
+import { runSweep } from './sweeper.js'
+import { recordRun } from './history.js'
 
-const BADGE = { CRITICAL: '■ CRITICAL', HIGH: '■ HIGH', MEDIUM: '▪ MEDIUM', LOW: '· low', NONE: '· ok' }
+const BADGE = { CRITICAL: '!! CRITICAL', HIGH: '!  HIGH', MEDIUM: '.  MEDIUM', LOW: '.  low', NONE: '   ok' }
 
 const args = process.argv.slice(2)
-const rosterPath = args.find((a) => !a.startsWith('--')) ?? 'data/roster.json'
-const fresh = args.includes('--fresh')
-const crashAfter = Number(process.env.PROTO_CRASH_AFTER ?? 0)
+const roster = await loadRoster()
 
-const roster = JSON.parse(await readFile(rosterPath, 'utf8'))
-const journal = await openJournal(roster, { fresh })
-
-console.log(`\n${roster.project}`)
-console.log(`${roster.generalContractor} · ${roster.subcontractors.length} subcontractors · ${roster.county}`)
-console.log(`run ${journal.runId} · checked ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z`)
-
-if (journal.isResumed) {
-  console.log(`\n  resuming, ${journal.doneCount()} of ${roster.subcontractors.length} already verified, picking up from there`)
+if (!roster.subcontractors.length) {
+  console.error('The roster is empty. Add subcontractors before sweeping.')
+  process.exit(1)
 }
-console.log()
 
-let verified = 0
-for (const sub of roster.subcontractors) {
-  if (journal.has(sub.licenseNumber)) {
-    console.log(`  ${sub.licenseNumber} … already verified, skipping`)
-    continue
+console.log(`\n${roster.project || 'Untitled project'}`)
+console.log(`${roster.subcontractors.length} subcontractors, ${roster.county}\n`)
+
+let findings = []
+
+for await (const event of runSweep(roster, {
+  fresh: args.includes('--fresh'),
+  direct: args.includes('--direct'),
+})) {
+  if (event.type === 'skip') console.log(`  ${event.entry.licenseNumber}  already verified`)
+  if (event.type === 'verified') {
+    const tools = (event.entry.investigation?.toolsUsed ?? []).filter((t) => !/structured/.test(t))
+    console.log(`  ${event.entry.licenseNumber}  ${event.entry.exposure.level.padEnd(9)} ${tools.length} calls`)
   }
-
-  process.stdout.write(`  checking ${sub.licenseNumber} … `)
-  const license = await lookupLicense(sub.licenseNumber).catch(() => null)
-  const permits = await getPermitActivity(sub.licenseNumber, { county: roster.county }).catch(() => null)
-  const exposure = scoreExposure({ license, permits, trade: sub.trade })
-
-  // Commit before moving on. Once this returns, this subcontractor never has to
-  // be asked about again, whatever happens to the process next.
-  await journal.commit(sub.licenseNumber, { ...sub, license, permits, exposure })
-  console.log(exposure.level)
-
-  if (crashAfter && ++verified >= crashAfter) {
-    console.log(`\n  [simulated crash after ${verified} verified, journal holds ${journal.doneCount()}]`)
-    process.exit(137)
-  }
+  if (event.type === 'unreachable') console.log(`  ${event.sub.licenseNumber}  register did not answer`)
+  if (event.type === 'complete') findings = event.findings
 }
 
-const scored = roster.subcontractors.map((s) => journal.get(s.licenseNumber)).filter(Boolean)
-
-console.log('\n' + '─'.repeat(72))
-for (const s of rankByExposure(scored)) {
-  console.log(`\n${BADGE[s.exposure.level]}  ${s.name}`)
-  console.log(`   ${s.licenseNumber} · ${s.license?.licenseType ?? 'unverified'}`)
-  for (const reason of s.exposure.reasons) console.log(`   → ${reason}`)
-  if (s.exposure.level !== 'NONE') console.log(`   action: ${s.exposure.action}`)
+if (!findings.length) {
+  console.log('\nNothing was established. Nothing recorded.\n')
+  process.exit(1)
 }
 
+console.log('\n' + '-'.repeat(66))
+for (const f of findings) {
+  console.log(`\n${BADGE[f.exposure.level]}  ${f.name}`)
+  console.log(`   ${f.licenseNumber}, ${f.license?.licenseType ?? 'unverified'}`)
+  for (const reason of f.exposure.reasons) console.log(`   - ${reason}`)
+  if (f.exposure.level !== 'NONE') console.log(`   action: ${f.exposure.action}`)
+}
+
+// A completed run enters the record and is left where the briefing can read it.
+await recordRun(roster.project, findings)
 await mkdir('out', { recursive: true })
 await writeFile(
   'out/findings.json',
-  JSON.stringify({ project: roster.project, checkedAt: new Date().toISOString(), findings: scored }, null, 2),
+  JSON.stringify({ project: roster.project, checkedAt: new Date().toISOString(), findings }, null, 2),
 )
 
-console.log('\n' + '─'.repeat(72))
-const acting = scored.filter((s) => s.exposure.level !== 'NONE').length
-console.log(`${acting} of ${scored.length} need attention.`)
-
-// The run is complete, so the journal has nothing left to protect.
-await journal.clear()
-console.log()
+const acting = findings.filter((f) => f.exposure.level !== 'NONE').length
+console.log('\n' + '-'.repeat(66))
+console.log(`${acting} of ${findings.length} need attention.\n`)

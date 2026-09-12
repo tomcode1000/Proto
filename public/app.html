@@ -1,3 +1,10 @@
+
+// A project just created, or one never named, opens on setup with the cursor
+// already in the field that has to be filled in first.
+if (location.hash === "#setup") {
+  show("settings");
+  setTimeout(() => { const f = $("#setProject"); if (f && f.focus) f.focus(); }, 60);
+}
 <!doctype html>
 <html lang="en">
 <head>
@@ -946,9 +953,10 @@ async function loadProjects() {
     })
   );
   $("#swNew").addEventListener("click", async () => {
-    const name = prompt("What is this project called?");
-    if (name === null) return;
-    await api("/api/projects/create", { name: name.trim() });
+    // A blank project is created and the page reopens on setup, because naming
+    // it is the first of the three steps rather than a question in a dialog box.
+    await api("/api/projects/create", { name: "" });
+    location.href = "/app#setup";
     location.reload();
   });
 }

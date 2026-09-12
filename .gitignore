@@ -12,3 +12,6 @@ data/
 # demo material, never published
 SCRIPT.txt
 .proto-state-test/
+
+# working material, not documentation
+PLAN.md

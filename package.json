@@ -8,12 +8,11 @@
     "node": ">=22"
   },
   "scripts": {
-    "smoke": "node --env-file=.env src/smoke.js",
-    "sweep": "node --env-file=.env src/sweep.js",
-    "test": "node --test",
-    "check": "node --env-file=.env src/check.js",
-    "run": "node --env-file=.env src/run.js",
-    "serve": "node --env-file=.env src/server.js"
+    "start": "node src/server.js",
+    "serve": "node --env-file-if-exists=.env src/server.js",
+    "sweep": "node --env-file-if-exists=.env src/sweep.js",
+    "brief": "node --env-file-if-exists=.env src/run.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

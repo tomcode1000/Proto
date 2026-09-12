@@ -69,7 +69,7 @@ flowchart LR
     T3 --> E
 
     subgraph engine [Engine, deterministic, no model]
-        E[exposure scoring<br/>pure functions, 17 tests]
+        E[exposure scoring<br/>pure functions, 20 tests]
         E --> J[(journal and history)]
     end
 
@@ -113,16 +113,15 @@ intact. A resumed run skips what is settled and continues from the first unsettl
 name.
 
 ```
-$ PROTO_CRASH_AFTER=5 npm run sweep
-  checking CCC1327792 … CRITICAL
-  ...
-  [simulated crash after 5 verified, journal holds 5]
+$ npm run sweep
+  CCC1332414  CRITICAL  2 calls
+  CAC1816423  NONE      1 call
+  ^C
 
 $ npm run sweep
-  resuming, 5 of 16 already verified, picking up from there
-  CCC1327792 … already verified, skipping
-  ...
-  4 of 16 need attention.
+  CCC1332414  already verified
+  CAC1816423  already verified
+  CFC1429225  NONE      1 call
 ```
 
 ## Adding subcontractors
@@ -154,10 +153,10 @@ rather than starting over.
 ```bash
 npm install
 cp .env.example .env          # add a model provider key
-npm test                      # exposure engine, deterministic
-npm run sweep                 # verify the roster against the live registry
-npm run run                   # triage + notice over the verified findings
+npm test                      # the engine, the journal, the record
 npm run serve                 # control room at http://localhost:8787
+npm run sweep                 # headless, no browser needed
+npm run brief                 # triage and notice over the last check
 ```
 
 ## Model providers
@@ -208,6 +207,17 @@ allegation about any firm's conduct.
 
 This project incorporates pre-existing Florida DBPR licence and county permit
 connector modules authored by me, adapted for this application.
+
+## Running it somewhere else
+
+`npm start` serves on `PORT`, or 8787 if unset, and reads configuration from the
+environment rather than a file, so nothing needs to exist on disk to boot.
+
+One thing to know before deploying: projects, rosters, schedules and sweep
+history are written to `data/`, and the run journal to `.proto-state/`. On a host
+with an ephemeral filesystem those are lost on every redeploy, which means the
+watch starts again from nothing. Attach a volume, or treat a hosted instance as a
+demonstration rather than a record.
 
 ## Licence
 
