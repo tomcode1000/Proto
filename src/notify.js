@@ -40,30 +40,93 @@ export async function sendTelegram({ botToken, chatId }, text) {
 
 const pretty = (s) => String(s ?? '').replace(/_/g, ' ').toLowerCase()
 
+/** One subcontractor, as a line someone can act on without opening anything. */
+function line(f) {
+  const lic = f.license
+  const bits = [
+    `<b>${esc(f.name)}</b>`,
+    `  ${esc(f.licenseNumber)}${f.trade ? `, ${esc(f.trade)}` : ''}`,
+  ]
+
+  if (!lic) {
+    bits.push('  Not found in the register. Treat as unverified.')
+    return bits.join('\n')
+  }
+
+  bits.push(`  ${esc(lic.statusRaw)}${lic.expirationDate ? `, expires ${esc(lic.expirationDate)}` : ''}`)
+  if (lic.licenseType) bits.push(`  ${esc(lic.licenseType)}`)
+
+  if (f.exposure.level !== 'NONE') {
+    bits.push(`  ${esc(f.exposure.level)}. ${esc(f.exposure.action)}`)
+  }
+  return bits.join('\n')
+}
+
 /**
  * The first message anyone gets.
  *
  * A watch that says nothing until something breaks leaves the operator unsure it
- * is running at all, so the baseline reports what was found and states plainly
- * that from here on it will only speak up when something moves.
+ * is running at all. The baseline is the full picture, every subcontractor with
+ * its number, class, status and expiry, because this is the one message where
+ * the reader has no prior state to compare against and needs the whole roster in
+ * front of them. Everything after it is an exception report.
  */
-export function composeBaseline(project, findings, schedule) {
+export function composeBaseline(project, findings, nextCheck) {
   const bad = findings.filter((f) => f.exposure.level !== 'NONE')
-  const lines = [`<b>${esc(project || 'Proto')}</b>`, '', `First check complete. ${findings.length} verified.`]
+  const ok = findings.filter((f) => f.exposure.level === 'NONE')
+
+  const out = [
+    `<b>${esc(project || 'Proto')}</b>`,
+    `First check complete. ${findings.length} subcontractor${findings.length === 1 ? '' : 's'} verified against the state register.`,
+  ]
 
   if (bad.length) {
-    lines.push('', `<b>${bad.length} need attention</b>`)
-    for (const f of bad) {
-      lines.push(
-        `• ${esc(f.name)} (${esc(f.licenseNumber)}) is ${esc(pretty(f.license?.status ?? 'not found'))}. ${esc(f.exposure.level)}.`,
-      )
-    }
-  } else {
-    lines.push('', 'Everything on this roster is in good standing.')
+    out.push('', `<b>NEEDS ATTENTION, ${bad.length}</b>`)
+    for (const f of bad) out.push('', line(f))
   }
 
-  lines.push('', schedule ? `From now on you will only hear from Proto when something changes. Next check ${esc(schedule)}.` : 'From now on you will only hear from Proto when something changes.')
-  return lines.join('\n')
+  if (ok.length) {
+    out.push('', `<b>IN GOOD STANDING, ${ok.length}</b>`)
+    for (const f of ok) out.push('', line(f))
+  }
+
+  out.push('', ',')
+  out.push(
+    nextCheck
+      ? `Next check ${esc(nextCheck)}. From now on Proto reports only what changes, and tells you when a check finds nothing.`
+      : 'From now on Proto reports only what changes, and tells you when a check finds nothing.',
+  )
+  return out.join('\n')
+}
+
+/**
+ * Nothing moved.
+ *
+ * Reported rather than swallowed, because a channel that only ever speaks with
+ * bad news gives the reader no way to tell working from broken. It is careful
+ * not to say "all clear" when findings are still outstanding from a previous
+ * check: nothing changing is not the same as nothing being wrong.
+ */
+export function composeQuiet(project, findings, nextCheck) {
+  const outstanding = findings.filter((f) => f.exposure.level !== 'NONE')
+
+  const out = [`<b>${esc(project || 'Proto')}</b>`]
+
+  if (!outstanding.length) {
+    out.push(
+      '',
+      `All clear. ${findings.length} subcontractor${findings.length === 1 ? '' : 's'} checked, every licence in good standing, nothing changed since the last check.`,
+    )
+  } else {
+    out.push(
+      '',
+      `Nothing changed since the last check. ${findings.length} checked, but ${outstanding.length} still ${outstanding.length === 1 ? 'needs' : 'need'} attention:`,
+    )
+    for (const f of outstanding) out.push('', line(f))
+  }
+
+  if (nextCheck) out.push('', `Next check ${esc(nextCheck)}.`)
+  return out.join('\n')
 }
 
 /**
@@ -121,7 +184,16 @@ export async function alertOnChange(roster, change, findings = []) {
     return { sent: true, kind: 'baseline' }
   }
 
-  if (change.quiet && roster.notify.onlyOnChange !== false) return { sent: false, reason: 'quiet' }
+  const when = roster.schedule?.nextDue
+    ? new Date(roster.schedule.nextDue).toLocaleString()
+    : null
+
+  // A quiet check is still a check, and saying so is what makes the silence in
+  // between trustworthy.
+  if (change.quiet) {
+    await sendTelegram(cfg, composeQuiet(roster.project, findings, when))
+    return { sent: true, kind: 'quiet' }
+  }
 
   await sendTelegram(cfg, composeAlert(roster.project, change))
   return { sent: true, kind: 'change' }
