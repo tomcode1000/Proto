@@ -12,8 +12,7 @@
     "serve": "node --env-file-if-exists=.env src/server.js",
     "sweep": "node --env-file-if-exists=.env src/sweep.js",
     "brief": "node --env-file-if-exists=.env src/run.js",
-    "test": "node --test",
-    "build": "node build-site.js"
+    "test": "node --test"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
