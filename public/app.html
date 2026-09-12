@@ -104,6 +104,7 @@
   .swmenu button small { margin-left: auto; font: 10.5px var(--mono); color: var(--mute); }
   .swmenu .sep { height: 1px; background: var(--line); margin: 5px 2px; }
   .swmenu .new { color: var(--violet); font-weight: 600; }
+  .swmenu .new .i { width: 14px; height: 14px; }
   .switcher em { margin-left: auto; color: var(--mute); }
   .switcher em .i { width: 15px; height: 15px; }
 
@@ -177,8 +178,10 @@
   .agent .runbtns { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
   .agent button {
     border-radius: 10px; padding: 9px 16px; font: 600 13px var(--sans); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
     border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.14); color: #fff;
   }
+  .agent button .i { width: 15px; height: 15px; }
   .agent button.solid { background: #fff; color: #4a25d6; border-color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
   .agent button:hover:not(:disabled) { transform: translateY(-1px); }
   .agent button { transition: .14s; }
@@ -513,7 +516,7 @@
     </div>
 
     <div class="swwrap">
-    <button class="switcher" id="swBtn"><span class="ic"><svg class="i"><use href="#i-building"/></svg></span><span id="swProject">Loading</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
+    <button class="switcher" id="swBtn"><span class="ic"><svg class="i"><use href="#i-site"/></svg></span><span id="swProject">Loading</span><em><svg class="i"><use href="#i-chev"/></svg></em></button>
       <div class="swmenu" id="swMenu"></div>
     </div>
 
@@ -525,7 +528,7 @@
 
     <div class="navlabel">Workspace</div>
     <button class="navitem on" data-view="dash"><span class="ic"><svg class="i"><use href="#i-grid"/></svg></span>Dashboard</button>
-    <button class="navitem" data-view="roster"><span class="ic"><svg class="i"><use href="#i-list"/></svg></span>Roster<span class="count" id="cRoster">0</span></button>
+    <button class="navitem" data-view="roster"><span class="ic"><svg class="i"><use href="#i-crew"/></svg></span>Roster<span class="count" id="cRoster">0</span></button>
     <button class="navitem" data-view="findings"><span class="ic"><svg class="i"><use href="#i-alert"/></svg></span>Findings<span class="count alarm" id="cFind">0</span></button>
     <button class="navitem" data-view="notices"><span class="ic"><svg class="i"><use href="#i-mail"/></svg></span>Notices</button>
 
@@ -550,7 +553,7 @@
         <p id="agentSub">Each subcontractor is checked against the Florida DBPR registry and county permit records.</p>
         <div class="runbtns">
           <button class="solid" id="btnRun">Run sweep</button>
-          <button id="btnKill" disabled>Stop this check</button>
+          <button id="btnKill" disabled><svg class="i"><use href="#i-pause"/></svg>Stop this check</button>
           </div>
         <div class="track"><i id="track"></i></div>
         <p style="margin-top:10px;font-size:11.8px;opacity:.72" id="sweepNote">
@@ -577,7 +580,7 @@
 
       <div class="kpis">
         <div class="kpi">
-          <div class="hd"><span class="ic"><svg class="i"><use href="#i-users"/></svg></span>Subcontractors</div>
+          <div class="hd"><span class="ic"><svg class="i"><use href="#i-crew"/></svg></span>Subcontractors</div>
           <b id="kRoster">0</b><small id="kRosterSub">on this project</small>
           <div class="prog"><span>On this project</span><b id="kRosterPct">0</b></div><div class="prog"><span>On this project</span><b id="kRosterPct">0</b></div><div class="prog"><span>On this project</span><b id="kRosterPct">0</b></div><div class="meter"><i style="width:100%"></i></div>
         </div>
@@ -592,7 +595,7 @@
           <div class="prog"><span>Share of roster</span><b id="kClearPct">0%</b></div><div class="prog"><span>Share of roster</span><b id="kClearPct">0%</b></div><div class="prog"><span>Share of roster</span><b id="kClearPct">0%</b></div><div class="meter"><i class="good" id="kClearBar" style="width:0"></i></div>
         </div>
         <div class="kpi">
-          <div class="hd"><span class="ic"><svg class="i"><use href="#i-clock"/></svg></span>Last verified</div>
+          <div class="hd"><span class="ic"><svg class="i"><use href="#i-schedule"/></svg></span>Last verified</div>
           <b id="kWhen" style="font-size:19px">Never</b><small id="kWhenSub">run a sweep to begin</small>
           <div class="prog"><span>Next check</span><b id="kNextPct">not set</b></div><div class="prog"><span>Next check</span><b id="kNextPct">not set</b></div><div class="prog"><span>Next check</span><b id="kNextPct">not set</b></div><div class="meter"><i id="kWhenBar" style="width:0"></i></div>
         </div>
@@ -613,7 +616,7 @@
         <div class="metric">
           <div class="top">
             <h3>Checks over time</h3>
-            <span class="cal"><svg class="i"><use href="#i-clock"/></svg></span>
+            <span class="cal"><svg class="i"><use href="#i-history"/></svg></span>
           </div>
           <div class="big" id="mxRuns">0</div>
           <div class="cap" id="mxRunsCap">completed checks on record</div>
@@ -919,7 +922,7 @@ async function loadProjects() {
         esc(p.project || "Unnamed project") + "<small>" + p.subcontractors + "</small></button>"
       )
       .join("") +
-    "<div class='sep'></div><button class='new' id='swNew'>Start a new project</button>";
+    "<div class='sep'></div><button class='new' id='swNew'><svg class='i'><use href='#i-plus'/></svg>Start a new project</button>";
 
   $$("[data-proj]").forEach((b) =>
     b.addEventListener("click", async () => {
