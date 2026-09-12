@@ -223,6 +223,44 @@
   .meter i.bad { background: var(--critical); }
   .meter i.good { background: var(--ok); }
 
+  /* rich metrics, modelled on the reference */
+  .metrics { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; margin-top: 14px; }
+  @media (max-width: 1000px) { .metrics { grid-template-columns: 1fr; } }
+  .metric {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 18px 20px 20px; box-shadow: var(--shadow);
+  }
+  .metric .top { display: flex; align-items: flex-start; gap: 10px; }
+  .metric .top h3 { margin: 0; font-size: 14.5px; font-weight: 600; letter-spacing: -.015em; }
+  .metric .cal {
+    margin-left: auto; width: 28px; height: 28px; border-radius: 9px; flex: none;
+    border: 1px solid var(--line); display: grid; place-items: center; color: var(--mute);
+  }
+  .metric .cal .i { width: 14px; height: 14px; }
+  .metric .big { font-size: 30px; letter-spacing: -.035em; font-weight: 640; margin: 12px 0 1px; }
+  .metric .cap { font-size: 12px; color: var(--mute); }
+
+  .seg { display: flex; gap: 3px; height: 30px; margin-top: 15px; align-items: stretch; }
+  .seg span { border-radius: 5px; min-width: 4px; transition: flex-grow .4s; }
+  .seg .pill {
+    margin-left: 6px; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 0 11px; display: grid; place-items: center; font: 600 12px var(--mono);
+    color: var(--ink); flex: none; box-shadow: 0 1px 3px rgba(60,50,140,.08);
+  }
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-top: 16px; }
+  .legend div { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--body); }
+  .legend i { width: 8px; height: 8px; border-radius: 99px; flex: none; }
+  .legend b { margin-left: auto; font: 600 12px var(--mono); color: var(--ink); }
+
+  .chart { display: flex; align-items: flex-end; gap: 10px; height: 96px; margin-top: 18px; }
+  .chart .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+  .chart .stack { width: 100%; display: flex; flex-direction: column-reverse; justify-content: flex-start;
+                  height: 74px; gap: 2px; }
+  .chart .stack i { width: 100%; border-radius: 3px; display: block; }
+  .chart .col span { font: 10px var(--mono); color: var(--mute); white-space: nowrap; }
+  .chart .col.now span { color: var(--violet); font-weight: 700; }
+  .chartempty { color: var(--mute); font-size: 12.5px; padding: 22px 0 6px; }
+
   /* panels */
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
   @media (max-width: 1100px) { .cols { grid-template-columns: 1fr; } }
@@ -512,9 +550,8 @@
         <p id="agentSub">Each subcontractor is checked against the Florida DBPR registry and county permit records.</p>
         <div class="runbtns">
           <button class="solid" id="btnRun">Run sweep</button>
-          <button id="btnKill" disabled>Kill mid-sweep</button>
-          <button id="btnFresh">Start fresh</button>
-        </div>
+          <button id="btnKill" disabled>Stop this check</button>
+          </div>
         <div class="track"><i id="track"></i></div>
         <p style="margin-top:10px;font-size:11.8px;opacity:.72" id="sweepNote">
           A sweep checks every subcontractor on the roster against the state register. The filter in
@@ -558,6 +595,29 @@
           <div class="hd"><span class="ic"><svg class="i"><use href="#i-clock"/></svg></span>Last verified</div>
           <b id="kWhen" style="font-size:19px">Never</b><small id="kWhenSub">run a sweep to begin</small>
           <div class="prog"><span>Next check</span><b id="kNextPct">not set</b></div><div class="prog"><span>Next check</span><b id="kNextPct">not set</b></div><div class="prog"><span>Next check</span><b id="kNextPct">not set</b></div><div class="meter"><i id="kWhenBar" style="width:0"></i></div>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="top">
+            <h3>Exposure across the roster</h3>
+            <span class="cal"><svg class="i"><use href="#i-shield"/></svg></span>
+          </div>
+          <div class="big" id="mxScore">0%</div>
+          <div class="cap" id="mxCap">of the roster needs attention</div>
+          <div class="seg" id="mxSeg"></div>
+          <div class="legend" id="mxLegend"></div>
+        </div>
+
+        <div class="metric">
+          <div class="top">
+            <h3>Checks over time</h3>
+            <span class="cal"><svg class="i"><use href="#i-clock"/></svg></span>
+          </div>
+          <div class="big" id="mxRuns">0</div>
+          <div class="cap" id="mxRunsCap">completed checks on record</div>
+          <div id="mxChart"><div class="chartempty">Run two checks and the trend appears here.</div></div>
         </div>
       </div>
 
@@ -672,7 +732,6 @@
         <p class="caption">The agent orders the morning and drafts the notice. It cannot invent a number that is not in the findings.</p>
         <div class="field">
           <button class="go" id="btnBrief" style="flex:none">Brief the site manager</button>
-          <button class="go quiet" id="btnExport2" style="flex:none">Export findings</button>
         </div>
         <div id="noticeList" style="margin-top:18px"></div>
         <div id="briefOut"></div>
@@ -1123,7 +1182,6 @@ $("#saveProject").addEventListener("click", async () => {
 /* ── sweep ──────────────────────────────────────────── */
 const running = (on) => {
   $("#btnRun").disabled = on;
-  $("#btnFresh").disabled = on;
   $("#btnKill").disabled = !on;
   $("#healthDot").className = "dot" + (on ? " busy" : "");
   $("#healthText").textContent = on ? "Verifying" : "All systems normal";
@@ -1169,7 +1227,6 @@ const exportCsv = async () => {
   URL.revokeObjectURL(url);
 };
 $("#btnExport").addEventListener("click", exportCsv);
-$("#btnExport2").addEventListener("click", exportCsv);
 
 /* ── the trend on the hero tiles, drawn from recorded runs ── */
 async function loadRuns() {
@@ -1184,6 +1241,7 @@ async function loadRuns() {
         Math.max(8, Math.round((v / peak) * 100)) + "%'></i>")
       .join("");
   };
+  paintChart(runs);
   draw("#sparkTotal", runs.map((r) => r.total));
   draw("#sparkBad", runs.map((r) => r.needsAttention));
 }
@@ -1233,11 +1291,87 @@ function paint(list) {
   $("#tabBad").textContent = bad.length;
   $("#tabOk").textContent = clear;
   paintNotices(list);
+  paintExposure(list);
   $("#findAll").innerHTML = list.length ? list.map(card).join("") : "<div class='empty'><b>Nothing verified yet</b>Run a sweep.</div>";
   applyFilterSoon();
   $("#findTop").innerHTML = bad.length
     ? bad.slice(0, 3).map(card).join("")
     : "<div class='empty'><b>Everything is clear</b>All " + list.length + " licences are in good standing.</div>";
+}
+
+/* ── the metric cards ───────────────────────────────── */
+const BANDS = [
+  ["CRITICAL", "var(--critical)"],
+  ["HIGH", "var(--high)"],
+  ["MEDIUM", "var(--medium)"],
+  ["LOW", "var(--medium)"],
+  ["NONE", "var(--mint)"],
+];
+
+/**
+ * The roster as one bar.
+ *
+ * A count tells you how many are wrong. The proportion tells you whether this
+ * project is in trouble, which is the question actually being asked.
+ */
+function paintExposure(list) {
+  const counts = {};
+  for (const [band] of BANDS) counts[band] = 0;
+  for (const f of list) counts[f.exposure.level] = (counts[f.exposure.level] || 0) + 1;
+
+  const bad = list.length - (counts.NONE || 0);
+  const pct = list.length ? Math.round((bad / list.length) * 100) : 0;
+
+  $("#mxScore").textContent = pct + "%";
+  $("#mxCap").textContent = list.length
+    ? bad + " of " + list.length + " need attention"
+    : "no subcontractors on this roster yet";
+
+  $("#mxSeg").innerHTML =
+    (list.length
+      ? BANDS.filter(([b]) => counts[b] > 0)
+          .map(([b, c]) => "<span style='flex:" + counts[b] + ";background:" + c + "'></span>")
+          .join("")
+      : "<span style='flex:1;background:rgba(21,26,43,.07)'></span>") +
+    "<span class='pill'>" + (list.length ? bad + "/" + list.length : "0") + "</span>";
+
+  const labels = { CRITICAL: "Critical", HIGH: "High", MEDIUM: "Medium", LOW: "Low", NONE: "In good standing" };
+  $("#mxLegend").innerHTML = BANDS.filter(([b]) => counts[b] > 0 || b === "NONE")
+    .map(([b, c]) =>
+      "<div><i style='background:" + c + "'></i>" + labels[b] + "<b>" + (counts[b] || 0) + "</b></div>")
+    .join("");
+}
+
+/**
+ * Every completed check, newest on the right.
+ *
+ * Each column is one run, split into what needed attention and what did not, so
+ * a roster quietly getting worse is visible as a shape rather than a number.
+ */
+function paintChart(runs) {
+  $("#mxRuns").textContent = runs.length;
+  $("#mxRunsCap").textContent = runs.length === 1 ? "completed check on record" : "completed checks on record";
+
+  if (runs.length < 2) return;
+
+  const peak = Math.max(...runs.map((r) => r.total), 1);
+  $("#mxChart").innerHTML =
+    "<div class='chart'>" +
+    runs
+      .map((r, i) => {
+        const bad = Math.round((r.needsAttention / peak) * 74);
+        const ok = Math.round(((r.total - r.needsAttention) / peak) * 74);
+        const when = new Date(r.at).toLocaleDateString([], { day: "numeric", month: "short" });
+        return (
+          "<div class='col " + (i === runs.length - 1 ? "now" : "") + "'>" +
+          "<div class='stack'>" +
+          "<i style='height:" + Math.max(ok, 2) + "px;background:var(--mint)'></i>" +
+          (r.needsAttention ? "<i style='height:" + Math.max(bad, 3) + "px;background:var(--critical)'></i>" : "") +
+          "</div><span>" + when + "</span></div>"
+        );
+      })
+      .join("") +
+    "</div>";
 }
 
 /* ── what changed ───────────────────────────────────── */
@@ -1418,7 +1552,6 @@ loadRuns();
 }
 
 $("#btnRun").addEventListener("click", () => sweep(false));
-$("#btnFresh").addEventListener("click", () => sweep(true));
 $("#btnKill").addEventListener("click", async () => {
   await api("/api/kill");
   if (source) source.close();

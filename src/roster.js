@@ -110,6 +110,10 @@ export async function loadRoster() {
   // "has a sweep run" was wrong: a run that happened before anyone switched
   // alerts on sent nothing, and then the baseline could never fire again.
   roster.notify.baselineSent ??= false
+  // Which subcontractors the operator has already been shown in full. Anyone
+  // added later is new to them, and gets introduced rather than appearing
+  // silently in an exception report about a name they have never seen.
+  roster.notify.reported ??= []
   return roster
 }
 

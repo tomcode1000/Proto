@@ -146,6 +146,35 @@ export function composeBaseline(project, findings, nextCheck) {
 }
 
 /**
+ * Someone new joined the watch.
+ *
+ * A subcontractor added after the baseline has never been reported, so an
+ * exception report would be the first time their name appeared, and only if
+ * something were wrong with them. They get the same full introduction the
+ * original roster got, and nothing else on the roster is repeated.
+ */
+export function composeAdded(project, added, nextCheck) {
+  const bad = added.filter((f) => f.exposure.level !== 'NONE')
+
+  const out = [
+    `<b>${esc(project || 'Proto')}</b>`,
+    '',
+    `${added.length} added to the watch and checked for the first time.`,
+  ]
+
+  for (const f of added) out.push('', line(f))
+
+  out.push(
+    '',
+    bad.length
+      ? `${bad.length} of them need${bad.length === 1 ? 's' : ''} attention now.`
+      : 'All of them are in good standing.',
+  )
+  if (nextCheck) out.push('', `Next check ${esc(nextCheck)}.`)
+  return out.join('\n')
+}
+
+/**
  * Nothing moved.
  *
  * Reported rather than swallowed, because a channel that only ever speaks with
@@ -231,7 +260,16 @@ export async function alertOnChange(roster, change, findings = []) {
   if (!roster.notify?.baselineSent) {
     if (!findings.length) return { sent: false, reason: 'nothing-to-report' }
     await sendTelegram(cfg, composeBaseline(roster.project, findings, when))
-    return { sent: true, kind: 'baseline' }
+    return { sent: true, kind: 'baseline', reported: findings.map((f) => f.licenseNumber) }
+  }
+
+  // Anyone added since the baseline is introduced in full before any exception
+  // reporting, so a name never appears for the first time inside a warning.
+  const seen = new Set(roster.notify.reported ?? [])
+  const added = findings.filter((f) => !seen.has(f.licenseNumber))
+  if (added.length) {
+    await sendTelegram(cfg, composeAdded(roster.project, added, when))
+    return { sent: true, kind: 'added', reported: added.map((f) => f.licenseNumber) }
   }
 
   if (!change?.ready) return { sent: false, reason: 'no-comparison' }

@@ -101,9 +101,14 @@ async function armFirstCheck() {
  * leave the roster believing it was delivered.
  */
 async function noteAlert(result) {
-  if (result?.kind !== 'baseline') return
+  if (!result?.reported?.length) return
   const roster = await loadRoster()
-  roster.notify = { ...roster.notify, baselineSent: true }
+  const reported = new Set([...(roster.notify?.reported ?? []), ...result.reported])
+  roster.notify = {
+    ...roster.notify,
+    baselineSent: Boolean(roster.notify?.baselineSent) || result.kind === 'baseline',
+    reported: [...reported],
+  }
   await saveRoster(roster)
 }
 
