@@ -862,7 +862,7 @@ async function loadProjects() {
       .join("") +
     "<div class='sep'></div><button class='new' id='swNew'>Start a new project</button>";
 
-  $("[data-proj]").forEach((b) =>
+  $$("[data-proj]").forEach((b) =>
     b.addEventListener("click", async () => {
       await api("/api/projects/switch", { id: b.dataset.proj });
       location.reload();
@@ -896,7 +896,6 @@ async function loadRoster() {
   $("#rosterCount").textContent = n + " on file";
   $("#setRosterCount").textContent = n ? n + " on the roster" : "";
   $("#kRosterPct").textContent = n + (n === 1 ? " subcontractor" : " subcontractors");
-  $("#kNextPct").textContent = chosen === "off" ? "off" : (days == null ? "pending" : (days <= 0 ? "due now" : "in " + days + "d"));
   if (roster.schedule && roster.schedule.cadence) chosen = roster.schedule.cadence;
   if (roster.schedule) {
     $("#setTime").value = roster.schedule.timeOfDay || "08:00";
@@ -912,6 +911,9 @@ async function loadRoster() {
 
   const due = roster.schedule && roster.schedule.nextDue ? new Date(roster.schedule.nextDue) : null;
   const days = due ? Math.ceil((due - Date.now()) / 86400000) : null;
+  $("#kNextPct").textContent =
+    chosen === "off" ? "off" : days == null ? "pending" : days <= 0 ? "due now" : "in " + days + "d";
+
   const watching =
     chosen === "off"
       ? "Automatic checks are off."
@@ -937,7 +939,7 @@ async function loadRoster() {
 
   applyFilter();
 
-  $("[data-rm]").forEach((b) =>
+  $$("[data-rm]").forEach((b) =>
     b.addEventListener("click", async () => {
       await api("/api/roster/remove", { licenseNumber: b.dataset.rm });
       loadRoster();
@@ -1022,6 +1024,9 @@ $("#importSheet").addEventListener("click", (e) => importRows({ sheetUrl: $("#sh
 
 /* ── the watch ──────────────────────────────────────── */
 let CADENCES = {};
+
+/** Never let a missing cadence entry take a render down. */
+const cadenceLabel = (key) => (CADENCES[key] && CADENCES[key].label ? CADENCES[key].label.toLowerCase() : String(key));
 let chosen = "weekly";
 
 async function renderCadences() {
@@ -1039,7 +1044,7 @@ async function renderCadences() {
   $$("[data-cad]").forEach((b) =>
     b.addEventListener("click", () => {
       chosen = b.dataset.cad;
-      $("[data-cad]").forEach((o) => o.classList.toggle("on", o === b));
+      $$("[data-cad]").forEach((o) => o.classList.toggle("on", o === b));
       paintTiming();
       paintWatch();
     })
@@ -1068,7 +1073,7 @@ function paintWatch() {
   if (chosen !== saved) {
     note.className = "watchnote due";
     note.innerHTML = icon("alert") + "<span>Not saved yet, press <b>Save project</b> to move the watch to " +
-      esc(CADENCES[chosen].label.toLowerCase()) + ".</span>";
+      esc(cadenceLabel(chosen)) + ".</span>";
     return;
   }
   note.className = "watchnote" + (days !== null && days <= 0 ? " due" : "");
@@ -1076,10 +1081,10 @@ function paintWatch() {
     icon(days !== null && days <= 0 ? "alert" : "check") +
     "<span>" +
     (days === null
-      ? "Watching " + esc(CADENCES[saved].label.toLowerCase()) + ". The first check runs shortly."
+      ? "Watching " + esc(cadenceLabel(saved)) + ". The first check runs shortly."
       : days <= 0
         ? "A check is due now. Proto will run it within a few minutes, or press Run sweep."
-        : "Watching " + esc(CADENCES[saved].label.toLowerCase()) + ". Next check in " + days +
+        : "Watching " + esc(cadenceLabel(saved)) + ". Next check in " + days +
           (days === 1 ? " day" : " days") + ", on " + due.toLocaleDateString() + ".") +
     "</span>";
 }
@@ -1110,7 +1115,7 @@ $("#saveProject").addEventListener("click", async () => {
       onlyOnChange: true,
     },
   });
-  say("#setSaid", "Saved. " + (chosen === "off" ? "Automatic checks are off." : "Proto will check " + CADENCES[chosen].label.toLowerCase() + "."), true);
+  say("#setSaid", "Saved. " + (chosen === "off" ? "Automatic checks are off." : "Proto will check " + cadenceLabel(chosen) + "."), true);
   await loadRoster();
   paintWatch();
 });
@@ -1139,16 +1144,16 @@ const applyFilterSoon = () => setTimeout(() => { applyFilter(); applyFindTab(); 
 /* ── findings tabs ─────────────────────────────────────── */
 let findTab = "all";
 function applyFindTab() {
-  $("#findAll .find").forEach((el) => {
+  $$("#findAll .find").forEach((el) => {
     const clear = el.classList.contains("NONE");
     const wanted = findTab === "all" || (findTab === "bad" && !clear) || (findTab === "ok" && clear);
     if (!wanted) el.style.display = "none";
   });
 }
-$("[data-find]").forEach((b) =>
+$$("[data-find]").forEach((b) =>
   b.addEventListener("click", () => {
     findTab = b.dataset.find;
-    $("[data-find]").forEach((o) => o.classList.toggle("on", o === b));
+    $$("[data-find]").forEach((o) => o.classList.toggle("on", o === b));
     applyFilter();
     applyFindTab();
   })
@@ -1444,9 +1449,9 @@ function applyFilter() {
 
   let shown = 0, hidden = 0;
   const rows = [
-    ...$("#rosterBody tr"),
-    ...$("#findAll .find"),
-    ...$("#findTop .find"),
+    ...$$("#rosterBody tr"),
+    ...$$("#findAll .find"),
+    ...$$("#findTop .find"),
   ];
   rows.forEach((el) => {
     const ok = matches(el.textContent);
