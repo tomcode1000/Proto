@@ -326,6 +326,49 @@ const routes = {
     json(res, 200, await deleteProject(id))
   },
 
+
+  /**
+   * Can this machine reach the register at all.
+   *
+   * A sweep that reports every subcontractor as unreachable is either a network
+   * that cannot get out or a register refusing this address, and the two need
+   * different answers. This makes one plain request and reports exactly what
+   * came back, so the question can be settled from wherever it is deployed
+   * rather than guessed at from somewhere else.
+   */
+  'GET /api/diagnose': async (req, res) => {
+    const started = Date.now()
+    const out = { egress: null, register: null, ms: 0 }
+
+    try {
+      const r = await fetch('https://api.ipify.org?format=json', {
+        signal: AbortSignal.timeout(8000),
+      })
+      out.egress = (await r.json()).ip
+    } catch (err) {
+      out.egress = `no outbound internet: ${err.message}`
+    }
+
+    try {
+      const r = await fetch('https://www.myfloridalicense.com/portalsearches/VerifyLicensee', {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Proto/0.1)', Accept: 'text/html' },
+        signal: AbortSignal.timeout(25000),
+      })
+      const body = await r.text()
+      out.register = {
+        status: r.status,
+        bytes: body.length,
+        hasToken: body.includes('__RequestVerificationToken'),
+        looksBlocked: /access denied|forbidden|captcha|cloudflare|unusual traffic/i.test(body),
+        firstBytes: body.slice(0, 160).replace(/\s+/g, ' '),
+      }
+    } catch (err) {
+      out.register = { error: err.message }
+    }
+
+    out.ms = Date.now() - started
+    json(res, 200, out)
+  },
   'GET /api/cadences': async (req, res) => json(res, 200, CADENCES),
 
   /** What moved since the previous sweep, the reason a schedule is worth having. */
