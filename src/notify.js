@@ -41,6 +41,32 @@ export async function sendTelegram({ botToken, chatId }, text) {
 const pretty = (s) => String(s ?? '').replace(/_/g, ' ').toLowerCase()
 
 /**
+ * The first message anyone gets.
+ *
+ * A watch that says nothing until something breaks leaves the operator unsure it
+ * is running at all, so the baseline reports what was found and states plainly
+ * that from here on it will only speak up when something moves.
+ */
+export function composeBaseline(project, findings, schedule) {
+  const bad = findings.filter((f) => f.exposure.level !== 'NONE')
+  const lines = [`<b>${esc(project || 'Proto')}</b>`, '', `First check complete. ${findings.length} verified.`]
+
+  if (bad.length) {
+    lines.push('', `<b>${bad.length} need attention</b>`)
+    for (const f of bad) {
+      lines.push(
+        `• ${esc(f.name)} (${esc(f.licenseNumber)}) is ${esc(pretty(f.license?.status ?? 'not found'))}. ${esc(f.exposure.level)}.`,
+      )
+    }
+  } else {
+    lines.push('', 'Everything on this roster is in good standing.')
+  }
+
+  lines.push('', schedule ? `From now on you will only hear from Proto when something changes. Next check ${esc(schedule)}.` : 'From now on you will only hear from Proto when something changes.')
+  return lines.join('\n')
+}
+
+/**
  * Compose the alert.
  *
  * It leads with what got worse, because that is the only part anyone needs to
@@ -79,13 +105,24 @@ export function composeAlert(project, change) {
  * Returns what it decided and why, so the caller can log a skip instead of
  * wondering whether the message silently failed.
  */
-export async function alertOnChange(roster, change) {
+export async function alertOnChange(roster, change, findings = []) {
   const cfg = roster?.notify?.telegram
   if (!cfg?.enabled) return { sent: false, reason: 'disabled' }
   if (!cfg.botToken || !cfg.chatId) return { sent: false, reason: 'not-configured' }
-  if (!change?.ready) return { sent: false, reason: 'no-baseline' }
+
+  // The very first completed run has nothing to compare against, but it is the
+  // one the operator is waiting on. Report it, then go quiet.
+  if (!change?.ready) {
+    if (change?.reason !== 'first-run') return { sent: false, reason: 'no-runs' }
+    const when = roster.schedule?.nextDue
+      ? new Date(roster.schedule.nextDue).toLocaleString()
+      : null
+    await sendTelegram(cfg, composeBaseline(roster.project, findings, when))
+    return { sent: true, kind: 'baseline' }
+  }
+
   if (change.quiet && roster.notify.onlyOnChange !== false) return { sent: false, reason: 'quiet' }
 
   await sendTelegram(cfg, composeAlert(roster.project, change))
-  return { sent: true }
+  return { sent: true, kind: 'change' }
 }

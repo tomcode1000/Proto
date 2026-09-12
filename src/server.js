@@ -74,6 +74,27 @@ async function saveFindings(project, findings) {
   )
 }
 
+/**
+ * Arm the first check.
+ *
+ * Someone who has just entered a roster is waiting to find out what it says. A
+ * weekly cadence would leave them with nothing for days, unsure whether any of
+ * it works, so the first check is scheduled for a minute from now. The delay is
+ * there so a burst of additions settles before the sweep starts rather than
+ * firing once per licence.
+ */
+async function armFirstCheck() {
+  const roster = await loadRoster()
+  if (!roster.subcontractors.length) return
+  if (roster.schedule?.lastRun) return // already has a baseline
+
+  const soon = new Date(Date.now() + 60_000).toISOString()
+  if (roster.schedule?.nextDue && new Date(roster.schedule.nextDue) <= new Date(soon)) return
+
+  roster.schedule = { ...roster.schedule, nextDue: soon }
+  await saveRoster(roster)
+}
+
 /** Stamp the watch after a sweep actually finishes. */
 async function markChecked() {
   const roster = await loadRoster()
@@ -91,7 +112,7 @@ async function markChecked() {
  * which is the entire point of scheduling it.
  */
 function startWatch() {
-  const TICK = 5 * 60_000
+  const TICK = 30_000
 
   setInterval(async () => {
     if (current) return // a run is already in flight
@@ -111,7 +132,7 @@ function startWatch() {
           await saveFindings(roster.project, event.findings)
           await recordRun(roster.project, event.findings)
           await markChecked()
-          const alert = await alertOnChange(await loadRoster(), await changes()).catch((err) => ({
+          const alert = await alertOnChange(await loadRoster(), await changes(), event.findings).catch((err) => ({
             sent: false,
             reason: err.message,
           }))
@@ -162,7 +183,7 @@ async function streamSweep(req, res) {
         await saveFindings(roster.project, event.findings)
         await recordRun(roster.project, event.findings)
         await markChecked()
-        await alertOnChange(await loadRoster(), await changes()).catch((err) =>
+        await alertOnChange(await loadRoster(), await changes(), event.findings).catch((err) =>
           console.error('  alert failed:', err.message),
         )
       }
@@ -359,7 +380,9 @@ const routes = {
 
   'POST /api/roster/add': async (req, res) => {
     try {
-      json(res, 200, await addOne(await body(req)))
+      const added = await addOne(await body(req))
+      await armFirstCheck()
+      json(res, 200, added)
     } catch (err) {
       json(res, 400, { error: err.message })
     }
@@ -385,7 +408,9 @@ const routes = {
     try {
       const { text, sheetUrl, rows } = await body(req)
       const parsed = rows ?? (sheetUrl ? await fromSheet(sheetUrl) : parseLines(text))
-      json(res, 200, await addMany(parsed))
+      const imported = await addMany(parsed)
+      await armFirstCheck()
+      json(res, 200, imported)
     } catch (err) {
       json(res, 400, { error: err.message })
     }
