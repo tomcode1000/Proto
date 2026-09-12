@@ -69,7 +69,7 @@ flowchart LR
     T3 --> E
 
     subgraph engine [Engine, deterministic, no model]
-        E[exposure scoring<br/>pure functions, 20 tests]
+        E[exposure scoring<br/>pure functions, 31 tests]
         E --> J[(journal and history)]
     end
 
