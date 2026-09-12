@@ -50,16 +50,23 @@ function line(f) {
 
   if (!lic) {
     bits.push('  Not found in the register. Treat as unverified.')
-    return bits.join('\n')
+    return bits.join('\n')
   }
 
   bits.push(`  ${esc(lic.statusRaw)}${lic.expirationDate ? `, expires ${esc(lic.expirationDate)}` : ''}`)
   if (lic.licenseType) bits.push(`  ${esc(lic.licenseType)}`)
 
   if (f.exposure.level !== 'NONE') {
-    bits.push(`  ${esc(f.exposure.level)}. ${esc(f.exposure.action)}`)
+    // The reasons are the whole point of scoring deterministically, and this is
+    // the one surface with no interface to click into. Sending a severity
+    // without them invites the reader to guess from whatever else is on the
+    // line: a suspended licence expiring in 2028 reads as though the date
+    // decided it, when the date had nothing to do with it.
+    bits.push(`  <b>${esc(f.exposure.level)}</b>`)
+    for (const reason of f.exposure.reasons) bits.push(`    ${esc(reason)}`)
+    bits.push(`  Do this: ${esc(f.exposure.action)}`)
   }
-  return bits.join('\n')
+  return bits.join('\n')
 }
 
 /**
@@ -96,7 +103,7 @@ export function composeBaseline(project, findings, nextCheck) {
       ? `Next check ${esc(nextCheck)}. From now on Proto reports only what changes, and tells you when a check finds nothing.`
       : 'From now on Proto reports only what changes, and tells you when a check finds nothing.',
   )
-  return out.join('\n')
+  return out.join('\n')
 }
 
 /**
@@ -126,7 +133,7 @@ export function composeQuiet(project, findings, nextCheck) {
   }
 
   if (nextCheck) out.push('', `Next check ${esc(nextCheck)}.`)
-  return out.join('\n')
+  return out.join('\n')
 }
 
 /**
