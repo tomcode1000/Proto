@@ -258,6 +258,41 @@ const routes = {
   'GET /': (req, res) => page(res, 'index.html'),
   'GET /app': (req, res) => page(res, 'app.html'),
   'GET /slides': (req, res) => page(res, 'slides.html'),
+
+  /**
+   * A contact sheet of the icon set.
+   *
+   * Icons are judged as a family, not one at a time, and the only sizes that
+   * matter are the ones they are used at. Every glyph is shown at 40px beside
+   * 14px, and again on the violet panel, because a stroke that reads on white
+   * can vanish there.
+   */
+  'GET /icons': async (req, res) => {
+    const sprite = await readFile('public/icons.html', 'utf8')
+    const ids = [...sprite.matchAll(/symbol id="i-([a-z]+)"/g)].map((m) => m[1])
+    const cell = (id) =>
+      '<div class=c><div class=row><svg class=lg><use href="#i-' + id + '"/></svg>' +
+      '<svg class=sm><use href="#i-' + id + '"/></svg></div><code>' + id + '</code></div>'
+    const style =
+      'body{font:13px system-ui;background:#f4f5f8;margin:0;padding:28px}' +
+      'h2{font:600 11px ui-monospace;letter-spacing:.14em;color:#8a92a8;margin:26px 0 12px}' +
+      '.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}' +
+      '.c{background:#fff;border:1px solid #e6e8ef;border-radius:14px;padding:16px 8px 10px;text-align:center}' +
+      '.row{display:flex;align-items:flex-end;justify-content:center;gap:14px;margin-bottom:10px}' +
+      'svg{fill:none;stroke:#151a2b;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}' +
+      '.lg{width:40px;height:40px}.sm{width:14px;height:14px}' +
+      'code{font:10.5px ui-monospace;color:#5c6577}' +
+      '.violet{background:#6d4aff;padding:18px;border-radius:14px;display:flex;gap:16px;flex-wrap:wrap}' +
+      '.violet svg{stroke:#fff;width:20px;height:20px}'
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+    res.end(
+      '<!doctype html><meta charset="utf-8"><title>Proto icons</title><style>' + style + '</style>' +
+      sprite +
+      '<h2>EVERY ICON AT 40PX AND 14PX</h2><div class=g>' + ids.map(cell).join('') + '</div>' +
+      '<h2>ON THE VIOLET PANEL</h2><div class=violet>' +
+      ids.map((i) => '<svg><use href="#i-' + i + '"/></svg>').join('') + '</div>',
+    )
+  },
   'GET /api/sweep': streamSweep,
 
   'POST /api/kill': async (req, res) => {
