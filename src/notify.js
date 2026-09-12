@@ -219,20 +219,22 @@ export async function alertOnChange(roster, change, findings = []) {
   if (!cfg?.enabled) return { sent: false, reason: 'disabled' }
   if (!cfg.botToken || !cfg.chatId) return { sent: false, reason: 'not-configured' }
 
-  // The very first completed run has nothing to compare against, but it is the
-  // one the operator is waiting on. Report it, then go quiet.
-  if (!change?.ready) {
-    if (change?.reason !== 'first-run') return { sent: false, reason: 'no-runs' }
-    const when = roster.schedule?.nextDue
-      ? new Date(roster.schedule.nextDue).toLocaleString()
-      : null
+  const when = roster.schedule?.nextDue
+    ? new Date(roster.schedule.nextDue).toLocaleString()
+    : null
+
+  // Until the whole roster has actually reached the operator, the next
+  // completed run sends it, whatever the comparison says. Somebody who turned
+  // alerts on after their first sweep should still get the full picture once,
+  // rather than being dropped straight into exception reports about a roster
+  // they have never seen.
+  if (!roster.notify?.baselineSent) {
+    if (!findings.length) return { sent: false, reason: 'nothing-to-report' }
     await sendTelegram(cfg, composeBaseline(roster.project, findings, when))
     return { sent: true, kind: 'baseline' }
   }
 
-  const when = roster.schedule?.nextDue
-    ? new Date(roster.schedule.nextDue).toLocaleString()
-    : null
+  if (!change?.ready) return { sent: false, reason: 'no-comparison' }
 
   // A quiet check is still a check, and saying so is what makes the silence in
   // between trustworthy.

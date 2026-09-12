@@ -106,6 +106,10 @@ export async function loadRoster() {
   // Alerts are opt in, and quiet by default: a channel that reports clean runs
   // gets muted, and a muted channel reports nothing at all.
   roster.notify ??= { telegram: { botToken: '', chatId: '', enabled: false }, onlyOnChange: true }
+  // Whether the full roster has actually reached the operator. Gating this on
+  // "has a sweep run" was wrong: a run that happened before anyone switched
+  // alerts on sent nothing, and then the baseline could never fire again.
+  roster.notify.baselineSent ??= false
   return roster
 }
 

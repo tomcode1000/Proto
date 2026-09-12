@@ -86,12 +86,24 @@ async function saveFindings(project, findings) {
 async function armFirstCheck() {
   const roster = await loadRoster()
   if (!roster.subcontractors.length) return
-  if (roster.schedule?.lastRun) return // already has a baseline
+  if (roster.notify?.baselineSent) return // the operator already has the full picture
 
   const soon = new Date(Date.now() + 60_000).toISOString()
   if (roster.schedule?.nextDue && new Date(roster.schedule.nextDue) <= new Date(soon)) return
 
   roster.schedule = { ...roster.schedule, nextDue: soon }
+  await saveRoster(roster)
+}
+
+/**
+ * Record that an alert went out, so a baseline is sent once and only once.
+ * It is written after the send, never before: a message that failed must not
+ * leave the roster believing it was delivered.
+ */
+async function noteAlert(result) {
+  if (result?.kind !== 'baseline') return
+  const roster = await loadRoster()
+  roster.notify = { ...roster.notify, baselineSent: true }
   await saveRoster(roster)
 }
 
@@ -132,10 +144,10 @@ function startWatch() {
           await saveFindings(roster.project, event.findings)
           await recordRun(roster.project, event.findings)
           await markChecked()
-          const alert = await alertOnChange(await loadRoster(), await changes(), event.findings).catch((err) => ({
-            sent: false,
-            reason: err.message,
-          }))
+          const alert = await alertOnChange(await loadRoster(), await changes(), event.findings).catch(
+            (err) => ({ sent: false, reason: err.message }),
+          )
+          await noteAlert(alert)
           console.log(
             `  scheduled check complete, ${event.needsAttention} need attention` +
               (alert.sent ? ', alert sent' : ''),
@@ -183,9 +195,13 @@ async function streamSweep(req, res) {
         await saveFindings(roster.project, event.findings)
         await recordRun(roster.project, event.findings)
         await markChecked()
-        await alertOnChange(await loadRoster(), await changes(), event.findings).catch((err) =>
-          console.error('  alert failed:', err.message),
+        const alert = await alertOnChange(await loadRoster(), await changes(), event.findings).catch(
+          (err) => {
+            console.error('  alert failed:', err.message)
+            return null
+          },
         )
+        await noteAlert(alert)
       }
       res.write(`data: ${JSON.stringify(event)}\n\n`)
     }
@@ -375,7 +391,9 @@ const routes = {
       roster.schedule = { ...roster.schedule, cadence: patch.cadence }
       roster.schedule.nextDue = nextDueFrom(roster.schedule)
     }
-    json(res, 200, await saveRoster(roster))
+    const saved = await saveRoster(roster)
+    await armFirstCheck()
+    json(res, 200, saved)
   },
 
   'POST /api/roster/add': async (req, res) => {
