@@ -765,7 +765,8 @@
           </label>
           <label>Chat ID
             <input type="text" id="tgChat" placeholder="Your chat or group id" autocomplete="off">
-            <em>Message @userinfobot to get yours, or add the bot to a group.</em>
+            <em>Your own chat, not the bot. Message @userinfobot in Telegram and it replies with your id.
+            Then send your bot one message, a bot cannot open a conversation first.</em>
           </label>
         </div>
 
@@ -805,7 +806,25 @@
 </aside>
 
 <script>
-const $ = (s) => document.querySelector(s);
+/**
+ * Elements come and go as views are rewritten, and one that has been removed
+ * must not take every listener after it down with it. A missing node returns a
+ * harmless stand in rather than null, so a stale reference is a no op instead of
+ * a page that silently stops responding.
+ */
+const MISSING = Object.freeze({
+  addEventListener() {},
+  classList: { toggle() {}, add() {}, remove() {}, contains: () => false },
+  querySelector: () => null,
+  style: {},
+  dataset: {},
+  textContent: "",
+  innerHTML: "",
+  value: "",
+  checked: false,
+  disabled: false,
+});
+const $ = (s) => document.querySelector(s) ?? MISSING;
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const api = async (path, body) => {
@@ -867,7 +886,6 @@ document.addEventListener("click", () => $("#swMenu").classList.remove("on"));
 async function loadRoster() {
   roster = await (await fetch("/api/roster")).json();
   $("#swProject").textContent = roster.project || "Name your project";
-  $("#swGC").textContent = roster.generalContractor || ",";
   $("#setProject").value = roster.project || "";
   $("#setGC").value = roster.generalContractor || "";
   $("#setCounty").value = roster.county || "MIAMI-DADE";

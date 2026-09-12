@@ -1,9 +1,16 @@
 /**
  * Telegram alerts.
  *
- * The rule here is restraint. A channel that pings on every clean run gets muted
- * within a fortnight, and a muted channel reports nothing at all, including the
- * one week it mattered. So by default Proto speaks only when something moved.
+ * Three messages, and the difference between them is the point.
+ *
+ * The first is the whole roster, because the reader has no prior state to
+ * compare against and needs everything in front of them once.
+ *
+ * After that a check reports what moved, and when nothing moved it says so
+ * anyway: a channel that only ever speaks with bad news gives nobody a way to
+ * tell working from broken. It never calls a run "all clear" while a finding is
+ * still outstanding, because nothing changing is not the same as nothing being
+ * wrong.
  *
  * Zero dependencies: Telegram's bot API is a plain HTTPS call.
  */
@@ -14,6 +21,42 @@ const TIMEOUT_MS = 15_000
 /** Telegram's HTML mode, so a company name with an ampersand cannot break the message. */
 const esc = (s) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/**
+ * Turn Telegram's wording into something the reader can act on.
+ *
+ * Its errors are accurate and useless. "The bot can't send messages to the bot"
+ * is what you get for pasting the bot's own id into the chat field, which is the
+ * single easiest mistake to make, because BotFather hands you the bot's details
+ * and says nothing about whose chat you are writing to.
+ */
+function explain(description, status) {
+  const d = String(description ?? '')
+
+  if (/bot can.?t send messages to (the )?bot|bot_id/i.test(d)) {
+    return (
+      'That Chat ID belongs to the bot itself, so it is trying to message itself. ' +
+      'You need your own chat id: open Telegram, message @userinfobot, and it will reply with ' +
+      'your id. Then send your bot any message once so it is allowed to reply to you.'
+    )
+  }
+  if (/chat not found/i.test(d)) {
+    return (
+      'Telegram does not recognise that Chat ID. Check it with @userinfobot, and make sure you ' +
+      'have sent your bot at least one message: a bot cannot open a conversation first.'
+    )
+  }
+  if (/unauthorized/i.test(d)) {
+    return 'That bot token was rejected. Copy it again from @BotFather, it is the long string containing a colon.'
+  }
+  if (/blocked|deactivated/i.test(d)) {
+    return 'That chat has blocked the bot, or the account is deactivated. Unblock it in Telegram and try again.'
+  }
+  if (/not enough rights|need administrator/i.test(d)) {
+    return 'The bot is in that group but not allowed to post. Make it an administrator, or allow it to send messages.'
+  }
+  return d || `Telegram refused the message (HTTP ${status}).`
+}
 
 export async function sendTelegram({ botToken, chatId }, text) {
   if (!botToken || !chatId) throw new Error('Telegram is not configured.')
@@ -31,10 +74,7 @@ export async function sendTelegram({ botToken, chatId }, text) {
   })
 
   const data = await res.json().catch(() => ({}))
-  if (!data.ok) {
-    // Telegram's own wording is more useful than anything paraphrased.
-    throw new Error(data.description || `Telegram refused the message (HTTP ${res.status}).`)
-  }
+  if (!data.ok) throw new Error(explain(data.description, res.status))
   return data.result
 }
 
@@ -97,7 +137,6 @@ export function composeBaseline(project, findings, nextCheck) {
     for (const f of ok) out.push('', line(f))
   }
 
-  out.push('', ',')
   out.push(
     nextCheck
       ? `Next check ${esc(nextCheck)}. From now on Proto reports only what changes, and tells you when a check finds nothing.`
