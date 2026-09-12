@@ -34,8 +34,11 @@ async function gather(sub, county, { direct = false, sources } = {}) {
       if (!out.license && !out.notFound) throw new Error('agent returned no licence record')
       return { ...out, mode: 'agent' }
     } catch (err) {
-      if (/DBPR|register|timeout|fetch failed|HTTP/i.test(err.message)) throw err
-      // Anything else is the model's problem, not the register's.
+      // Only the register failing makes a subcontractor unreachable. Anything
+      // else is the model's problem, and the direct path below does not need
+      // one, so a missing key or a rate limit must never stop a check.
+      if (err.source === 'register') throw err
+      console.error(`  agent unavailable, reading every source directly: ${err.message}`)
     }
   }
 

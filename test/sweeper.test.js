@@ -133,3 +133,30 @@ test('a kill during the last subcontractor stops the run, it does not complete',
 
   await rm(STATE, { recursive: true, force: true })
 })
+
+test('a model that will not start does not make the register unreachable', async () => {
+  await rm(STATE, { recursive: true, force: true })
+  const book = roster(2)
+
+  // No provider key configured, which is what a fresh deployment looks like
+  // before anyone fills the environment in. The message even carries an https
+  // address, which is what previously got it mistaken for an HTTP failure.
+  const saved = { ...process.env }
+  delete process.env.GOOGLE_API_KEY
+  delete process.env.OPENROUTER_API_KEY
+  delete process.env.GROQ_API_KEY
+  process.env.PROTO_MODEL_PROVIDER = 'google'
+
+  try {
+    const events = await collect(runSweep(book, { fresh: true, sources: answers }))
+    const verified = events.filter((e) => e.type === 'verified')
+    const unreachable = events.filter((e) => e.type === 'unreachable')
+
+    assert.equal(unreachable.length, 0, 'the register was fine, so nothing is unreachable')
+    assert.equal(verified.length, 2, 'both are checked by reading every source directly')
+    assert.equal(verified[0].entry.investigation.mode, 'direct', 'it fell back rather than failing')
+  } finally {
+    Object.assign(process.env, saved)
+    await rm(STATE, { recursive: true, force: true })
+  }
+})

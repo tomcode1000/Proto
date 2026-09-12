@@ -23,6 +23,20 @@ const TIMEOUT_MS = 30_000
 
 let lastRequestAt = 0
 
+/**
+ * Mark an error as the register's.
+ *
+ * Callers used to work this out by matching words in the message, which meant a
+ * model complaining about a missing key and pointing at an https address was
+ * read as an HTTP failure from the register. Failures say where they came from
+ * now, rather than being guessed at.
+ */
+export function fromRegister(message) {
+  const err = new Error(message)
+  err.source = 'register'
+  return err
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 /** Keep a courteous gap between requests to a public government service. */
@@ -69,6 +83,8 @@ async function request(jar, url, options = {}, attempt = 1) {
   try {
     return await requestOnce(jar, url, options)
   } catch (err) {
+    // Network faults arrive from fetch untagged, so they are tagged here.
+    if (!err.source) err.source = 'register'
     const transient = /timeout|abort|fetch failed|ECONNRESET|socket hang up|HTTP 5\d\d/i.test(err.message)
     if (!transient || attempt >= MAX_ATTEMPTS) throw err
     await sleep(attempt * 1500)
@@ -91,7 +107,7 @@ async function requestOnce(jar, url, { method = 'GET', body = null } = {}) {
     redirect: 'follow',
   })
   jar.absorb(res)
-  if (!res.ok) throw new Error(`DBPR returned HTTP ${res.status} for ${url}`)
+  if (!res.ok) throw fromRegister(`DBPR returned HTTP ${res.status} for ${url}`)
   return res.text()
 }
 
