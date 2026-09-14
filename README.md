@@ -212,11 +212,16 @@ connector modules authored by me, adapted for this application.
 
 `npm start` serves on `PORT`, or 8787 if unset, and reads configuration from the
 environment rather than a file, so nothing needs to exist on disk to boot.
+`GET /healthz` answers without touching disk, for a platform's liveness probe.
 
-One thing to know before deploying: projects, rosters, schedules and sweep
-history are written to `data/`, and the run journal to `.proto-state/`. On a host
-with an ephemeral filesystem those are lost on every redeploy, which means the
-watch starts again from nothing. Attach a volume, or treat a hosted instance as a
+Proto needs a process that stays up, because the watch is a timer inside it. A
+host that idles the process out is not running a watch during the hours it is
+asleep, whatever the cadence says.
+
+The other thing to know: projects, rosters, schedules and sweep history are
+written to `data/`, and the run journal to `.proto-state/`. On a host with an
+ephemeral filesystem those are lost on every redeploy, which means the watch
+starts again from nothing. Attach a volume, or treat a hosted instance as a
 demonstration rather than a record.
 
 ## Licence

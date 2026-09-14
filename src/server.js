@@ -256,6 +256,16 @@ async function brief(res) {
 
 const routes = {
   'GET /': (req, res) => page(res, 'index.html'),
+
+  /**
+   * Liveness.
+   *
+   * The watch is a timer inside this process, so whether the process is up is
+   * the whole question, and a platform probe asking that should not have to
+   * render a page to find out. This reads nothing from disk and touches no
+   * roster, so it can be asked as often as a host likes.
+   */
+  'GET /healthz': (req, res) => json(res, 200, { ok: true, uptime: process.uptime() }),
   'GET /app': (req, res) => page(res, 'app.html'),
   'GET /slides': (req, res) => page(res, 'slides.html'),
 

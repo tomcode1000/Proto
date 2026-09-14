@@ -7,7 +7,7 @@
 # Note what the free instance costs you: it sleeps after about fifteen minutes of
 # inactivity, and a sleeping process fires no scheduled checks. It wakes on the
 # next request, so the control room works fine for a demonstration, but the watch
-# is only really a watch on a paid instance or a host that stays up.
+# is only really a watch while the process stays up.
 services:
   - type: web
     name: proto
@@ -16,7 +16,7 @@ services:
     # ci installs exactly what the lockfile pins, rather than re-resolving it
     buildCommand: npm ci
     startCommand: npm start
-    healthCheckPath: /
+    healthCheckPath: /healthz
     envVars:
       - key: PROTO_MODEL_PROVIDER
         value: openrouter
